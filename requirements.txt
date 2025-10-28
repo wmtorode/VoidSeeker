@@ -1,0 +1,6 @@
+discord.py==2.6.4
+SQLAlchemy==2.0.44
+alembic
+click
+alembic-migrate
+psycopg

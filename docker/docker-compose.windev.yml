@@ -1,0 +1,41 @@
+######################################################################
+# Camelot Command Bot Development Compose for Docker on Windows
+######################################################################
+
+version: '3.2'
+services:
+  voidseeker:
+    build: ../
+    restart: always
+    container_name: VoidSeeker
+
+#   This external link is for the database container.
+    external_links:
+      - roguebot-db:db
+    security_opt:
+      - apparmor:unconfined
+    cap_add:
+      - SYS_ADMIN
+      - DAC_READ_SEARCH
+    volumes:
+      - c:\voidseeker\log:/opt/voidseekerLog
+      - c:\voidseeker\data:/opt/voidseekerStore
+    environment:
+      ALEMBIC_BASE: libvoidseeker.model.base
+      DISCORD_BOT_SECRET: NA
+      DISCORD_OWNING_USER_ID: NA
+      DATABASE_URL: postgresql+psycopg://botUser:botPass@db:5432/voidseeker
+    networks:
+      - frontend
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "25m"
+        max-file: "3"
+
+networks:
+  frontend:
+    internal: false
+  backend:
+    internal: true

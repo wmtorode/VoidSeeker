@@ -1,0 +1,149 @@
+import os
+import os.path
+import logging
+import logging.handlers
+import traceback
+import platform
+
+import discord
+import asyncio
+
+from sqlalchemy.orm import sessionmaker
+
+from libvoidseeker import *
+
+
+def getIdList(stIds):
+    ret = []
+    if stIds is None:
+        return ret
+    ltIds = stIds.split(";")
+    for sId in ltIds:
+        try:
+            iId = int(sId)
+            ret.append(iId)
+        except:
+            pass
+    return ret
+
+
+INT_MAX_LOG_SIZE = 1024 * 1024 * 5  # ~5MB size
+LOG_DIR = '/opt/voidseekerLog/'
+STORE_DIR = '/opt/voidseekerStore/'
+LOG_FILE = LOG_DIR + 'botlog.txt'
+
+if not os.path.isdir(LOG_DIR):
+    os.makedirs(LOG_DIR)
+
+if not os.path.isdir(STORE_DIR):
+    os.makedirs(STORE_DIR)
+
+LOGGER = logging.getLogger()
+LOGGER.setLevel(logging.INFO)
+obj_handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=INT_MAX_LOG_SIZE, backupCount=5)
+obj_handler.setLevel(logging.INFO)
+obj_formatter = logging.Formatter('%(name)-18s %(levelname)-8s %(funcName)-25s %(asctime)-25s %(message)s')
+obj_handler.setFormatter(obj_formatter)
+LOGGER.addHandler(obj_handler)
+
+
+TOKEN = os.getenv("DISCORD_BOT_SECRET")
+OWNERS = getIdList(os.getenv("DISCORD_OWNING_USER_ID"))
+
+
+class VoidSeeker(discord.Client):
+
+
+    def __init__(self, logger):
+        intents = discord.Intents.default()
+        intents.members = True
+        intents.presences = True
+        intents.message_content = True
+        discord.Client.__init__(self, intents=intents)
+        self.ownerIds = OWNERS
+        self.logger = logger
+        self.initComplete = False
+        self.SessionMaker = sessionmaker()
+        self.SessionMaker.configure(bind=ENGINE)
+        self.Session = self.SessionMaker()
+        self.CommandMap = {}
+        self.baseModule = None
+        self.statusModule = None
+        self.settings = BotSettings()
+
+        self.modules = []
+
+    def initModulesAndCommands(self):
+
+        self.baseModule = BaseModule(self.logger, self.settings, self.Session, self, STORE_DIR)
+
+        self.initSettings()
+
+        self.statusModule = StatusModule(self.logger, self.settings, self.Session, self, STORE_DIR)
+
+        self.modules = [
+            self.statusModule
+        ]
+
+        for module in self.modules:
+            commands = module.registerCommands()
+            self.CommandMap.update(commands)
+
+        self.initComplete = True
+
+    async def on_ready(self):
+        self.logger.info(f'{self.user} has connected to Discord!')
+        print(f'{self.user} has connected to Discord, using PY: {platform.python_version()}, DS: {discord.__version__}')
+        if not self.initComplete:
+            self.initModulesAndCommands()
+
+    def initSettings(self):
+        self.baseModule.startSqlEntry()
+        servers = self.Session.query(ServerSetting).all()
+        for server in servers:
+            settings = ServerSettings(server.serverId)
+            self.rebuildServerSettings(settings)
+            self.settings.serverSettings[server.serverId] = settings
+
+    def rebuildServerSettings(self, serverSettings: ServerSettings):
+        self.baseModule.startSqlEntry()
+        baseSettings = self.Session.query(ServerSetting).filter(ServerSetting.serverId == serverSettings.serverId).first()
+        honeyPotChannel = self.Session.query(HoneyPotChannel).filter(HoneyPotChannel.serverId == serverSettings.serverId).first()
+        authUsers = self.Session.query(AuthUser).filter(AuthUser.serverId == serverSettings.serverId).all()
+        antiSpamImmuneRoles = self.Session.query(ImmuneRole).filter(ImmuneRole.serverId == serverSettings.serverId).all()
+        banTerms = self.Session.query(BanTerm).filter(BanTerm.serverId == serverSettings.serverId).all()
+
+        serverSettings.initSettings(baseSettings, honeyPotChannel, authUsers, antiSpamImmuneRoles, banTerms)
+
+    async def on_message(self, message:discord.Message):
+
+        try:
+            if message.author == self.user:
+                return
+            for user in message.mentions: # type: discord.abc.User
+                if user.mention == self.user.mention:
+                    await message.channel.trigger_typing()
+                    await message.channel.send("VoidSeeker Mk. 39 online")
+                    return
+
+            cmd = None
+            try:
+                cmd = message.content.split()[0]
+            except:
+                pass
+            if cmd:
+                if cmd in self.CommandMap:
+                    botCommand = self.CommandMap[cmd]
+                    await botCommand.runCommand(message, self.baseModule.getSettings(message.guild.id))
+
+        except:
+            trace = traceback.format_exc()
+            lst_trace = trace.split('\n')
+            for line in lst_trace:
+                self.logger.critical(line)
+            if TEST_MODE.lower() == "yes":
+                print(trace)
+
+
+client = VoidSeeker(LOGGER)
+client.run(TOKEN)
