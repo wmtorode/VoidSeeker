@@ -69,6 +69,7 @@ class VoidSeeker(discord.Client):
         self.CommandMap = {}
         self.baseModule = None
         self.statusModule = None
+        self.adminModule = None
         self.settings = BotSettings()
 
         self.modules = []
@@ -80,9 +81,11 @@ class VoidSeeker(discord.Client):
         self.initSettings()
 
         self.statusModule = StatusModule(self.logger, self.settings, self.Session, self, STORE_DIR)
+        self.adminModule = AdminModule(self.logger, self.settings, self.Session, self, STORE_DIR)
 
         self.modules = [
-            self.statusModule
+            self.statusModule,
+            self.adminModule
         ]
 
         for module in self.modules:
@@ -113,7 +116,9 @@ class VoidSeeker(discord.Client):
         antiSpamImmuneRoles = self.Session.query(ImmuneRole).filter(ImmuneRole.serverId == serverSettings.serverId).all()
         banTerms = self.Session.query(BanTerm).filter(BanTerm.serverId == serverSettings.serverId).all()
 
-        serverSettings.initSettings(baseSettings, honeyPotChannel, authUsers, antiSpamImmuneRoles, banTerms)
+        roles = self.get_guild(baseSettings.serverId).roles
+
+        serverSettings.initSettings(baseSettings, honeyPotChannel, authUsers, antiSpamImmuneRoles, banTerms, roles)
 
     async def on_message(self, message:discord.Message):
 

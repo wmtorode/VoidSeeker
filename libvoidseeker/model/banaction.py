@@ -15,6 +15,7 @@ class BanAction(ModelBase):
     userName = Column(Unicode(length=64), default="")
     createdAt = Column(DateTime)
     joinedAt = Column(DateTime)
+    detectionMethod = Column(String(length=64), default="")
 
     @property
     def pStat(self):

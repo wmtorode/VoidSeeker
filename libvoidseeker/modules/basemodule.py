@@ -7,6 +7,7 @@ import time
 import traceback
 from io import BytesIO
 
+from .. import ServerSetting
 from ..data import BotSettings, CommandAuth, ServerSettings
 
 TEST_MODE = os.getenv("TEST_MODE", default="No")
@@ -100,6 +101,14 @@ class BaseModule:
             self.Session.commit()
         except:
             self.Session.rollback()
+            self.Session.commit()
+
+    def ensureServerEntry(self, serverSettings: ServerSettings):
+        server = self.Session.query(ServerSetting).filter(ServerSetting.serverId == serverSettings.serverId).first()
+        if not server:
+            server = ServerSetting()
+            server.serverId = serverSettings.serverId
+            self.Session.add(server)
             self.Session.commit()
 
     def makeErrorEmbed(self, msg):

@@ -10,11 +10,14 @@ class StatusModule(BaseModule):
 
     pingCmd = BaseModule.NativeCommandPrefix + "ping"
     helpCmd = BaseModule.NativeCommandPrefix + "help"
+    getConfigCmd = BaseModule.CmdPrefix + "config"
 
     def registerCommands(self):
         return {
             self.pingCmd: Command(self.ping, "Pings the bot"),
-            self.helpCmd: Command(self.generateHelpText, "Displays the help menu")
+            self.helpCmd: Command(self.generateHelpText, "Displays the help menu"),
+            self.getConfigCmd: Command(self.renderSettings, "Displays the current server settings", self.modAuth)
+
         }
 
     async def ping(self, message:discord.Message, serverSettings: ServerSettings):
@@ -40,3 +43,29 @@ class StatusModule(BaseModule):
             if await self.voidseeker.CommandMap[command].canAccessHelp(message, serverSettings):
                 ltHelpCommands.append([command, self.voidseeker.CommandMap[command].helpTxt])
         await self._makeHelpTxt(ltHelpCommands, message.channel)
+
+    async def renderSettings(self, message: discord.Message, serverSettings: ServerSettings):
+
+        embed = discord.Embed(title="Server Config:", colour=discord.Colour.dark_teal(), description="")
+        embed.set_author(name=self.user.display_name, icon_url=self.user.display_avatar.url)
+
+        embed.add_field(name="Honey Pot Enabled", value=str(serverSettings.honeyPotChannelEnabled), inline=True)
+        embed.add_field(name="Honey Pot Channel ID", value=str(serverSettings.honeyPotChannelId), inline=True)
+        embed.add_field(name="Ban when pings everyone", value=str(serverSettings.banOnPingAll), inline=True)
+        embed.add_field(name="Anti-Spam Heuristics Enabled", value=str(serverSettings.antiSpamHeuristicsEnabled), inline=True)
+
+        if serverSettings.honeyPotChannelEnabled:
+            embed.add_field(name="Honey Pot Channel Text", value=serverSettings.honeyPotChannelText, inline=False)
+
+        embed.add_field(name="Anti-Spam Immune Roles", value=serverSettings.antiSpamImmuneList, inline=False)
+        embed.add_field(name="Ban Terms", value=serverSettings.spamTermList, inline=False)
+        embed.add_field(name="Ban Urls", value=serverSettings.spamUrlList, inline=False)
+
+        embed.add_field(name="Admins", value=serverSettings.adminList, inline=True)
+        embed.add_field(name="Moderators", value=serverSettings.modList, inline=True)
+
+        embed.set_footer(text=f"VoidSeeker Config for server: {message.guild.name}", icon_url=self.user.display_avatar.url)
+
+        await message.channel.send(embed=embed)
+
+
