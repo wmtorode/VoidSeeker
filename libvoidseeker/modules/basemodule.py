@@ -110,6 +110,8 @@ class BaseModule:
             server.serverId = serverSettings.serverId
             self.Session.add(server)
             self.Session.commit()
+        if serverSettings.serverId not in self.settings.serverSettings:
+            self.settings.serverSettings[serverSettings.serverId] = serverSettings
 
     def makeErrorEmbed(self, msg):
         embed = discord.Embed(colour=discord.Colour.brand_red())

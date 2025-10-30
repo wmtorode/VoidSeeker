@@ -4,20 +4,30 @@ import discord
 
 from ..data import Command, UserRole, ServerSettings
 from ..model import AuthUser
+from ..ui import StartSpamConfigView
 from .basemodule import BaseModule
 
 
 
 class AdminModule(BaseModule):
 
-    addAdminCmd = BaseModule.CmdPrefix + "addAdmin"
-    removeAdminCmd = BaseModule.CmdPrefix + "removeAdmin"
+    addAdminCmd = BaseModule.CmdPrefix + "aAdmin"
+    removeAdminCmd = BaseModule.CmdPrefix + "rAdmin"
 
-    addServerOwnerCmd = BaseModule.CmdPrefix + "addSOwner"
-    removeServerOwnerCmd = BaseModule.CmdPrefix + "removeSOwner"
+    addServerOwnerCmd = BaseModule.CmdPrefix + "aSOwner"
+    removeServerOwnerCmd = BaseModule.CmdPrefix + "rSOwner"
 
-    addModeratorCmd = BaseModule.CmdPrefix + "addModerator"
-    removeModeratorCmd = BaseModule.CmdPrefix + "removeModerator"
+    addModeratorCmd = BaseModule.CmdPrefix + "aModerator"
+    removeModeratorCmd = BaseModule.CmdPrefix + "rModerator"
+
+    startAntiSpamConfigCmd = BaseModule.CmdPrefix + "sConfig"
+
+    RoleRanks = {
+        UserRole.ADMIN: 10,
+        UserRole.MOD: 5,
+        UserRole.SERVER_OWNER: 25
+    }
+
 
     def registerCommands(self):
         return {
@@ -26,134 +36,73 @@ class AdminModule(BaseModule):
             self.addAdminCmd: Command(self.addAdmin, "Adds an admin to the server", self.adminAuth),
             self.removeAdminCmd: Command(self.removeAdmin, "Removes an admin from the server", self.adminAuth),
             self.addModeratorCmd: Command(self.addMod, "Adds a moderator to the server", self.adminAuth),
-            self.removeModeratorCmd: Command(self.removeMod, "Removes a moderator from the server", self.adminAuth)
+            self.removeModeratorCmd: Command(self.removeMod, "Removes a moderator from the server", self.adminAuth),
+            self.startAntiSpamConfigCmd: Command(self.startAntiSpamConfig, "Starts the Anti-Spambot Configuration Wizard", self.adminAuth)
         }
 
-    async def addServerOwner(self, message: discord.Message, serverSettings: ServerSettings):
+    async def _promoteUserToRole(self, message: discord.Message, serverSettings: ServerSettings, role):
         self.startSqlEntry()
         self.ensureServerEntry(serverSettings)
         if len(message.mentions) == 0:
-            await message.channel.send("Please mention a user to add as a server owner")
+            await message.channel.send(f"Please mention a user to add as a {role}")
             return
         for mention in message.mentions:
             user = self.Session.query(AuthUser).filter(AuthUser.serverId == serverSettings.serverId,
                                                        AuthUser.userId == mention.id).first()  # type: AuthUser
             if user:
-                if user.role == UserRole.SERVER_OWNER:
-                    await message.channel.send("User is already a server owner")
+                if self.RoleRanks[user.role] < self.RoleRanks[role]:
+                    await message.channel.send("User already has the requested or higher role")
+                    self.Session.rollback()
                     return
-                user.role = UserRole.SERVER_OWNER
+                user.role = role
                 user.updatedAt = datetime.datetime.now(datetime.UTC)
             else:
-                user = AuthUser(serverId=serverSettings.serverId, userId=mention.id, role=UserRole.SERVER_OWNER,
+                user = AuthUser(serverId=serverSettings.serverId, userId=mention.id, role=role,
                                 userName=mention.name)
                 self.Session.add(user)
         self.Session.commit()
         self.voidseeker.rebuildServerSettings(serverSettings)
-        await message.channel.send("Added server owner!")
+        await message.channel.send(f"Added {role}!")
+
+    async def _removeUserFromRole(self, message: discord.Message, serverSettings: ServerSettings, role):
+        self.startSqlEntry()
+        if len(message.mentions) == 0:
+            await message.channel.send("Please mention a user to remove from the requested role")
+            return
+        for mention in message.mentions:
+            user = self.Session.query(AuthUser).filter(AuthUser.serverId == serverSettings.serverId,
+                                                       AuthUser.userId == mention.id).first()  # type: AuthUser
+            if user:
+                if user.role == role:
+                    self.Session.delete(user)
+                else:
+                    await message.channel.send(f"User is not a {role}")
+                    return
+            else:
+                await message.channel.send(f"User is not a {role}")
+                return
+        self.Session.commit()
+        self.voidseeker.rebuildServerSettings(serverSettings)
+        await message.channel.send(f"removed {role}!")
+
+    async def startAntiSpamConfig(self, message: discord.Message, serverSettings: ServerSettings):
+        view = StartSpamConfigView(self.voidseeker, message.author.id, serverSettings)
+        await message.channel.send("Starting Anti-Spambot Configurator", view=view)
+
+    async def addServerOwner(self, message: discord.Message, serverSettings: ServerSettings):
+        await self._promoteUserToRole(message, serverSettings, UserRole.SERVER_OWNER)
 
     async def removeServerOwner(self, message: discord.Message, serverSettings: ServerSettings):
-        self.startSqlEntry()
-        if len(message.mentions) == 0:
-            await message.channel.send("Please mention a user to remove as an server owner")
-            return
-        for mention in message.mentions:
-            user = self.Session.query(AuthUser).filter(AuthUser.serverId == serverSettings.serverId,
-                                                       AuthUser.userId == mention.id).first()  # type: AuthUser
-            if user:
-                if user.role == UserRole.SERVER_OWNER:
-                    self.Session.delete(user)
-                else:
-                    await message.channel.send("User is not a server owner")
-                    return
-            else:
-                await message.channel.send("User is not a server owner")
-                return
-        self.Session.commit()
-        self.voidseeker.rebuildServerSettings(serverSettings)
-        await message.channel.send("removed server owner!")
+        await self._removeUserFromRole(message, serverSettings, UserRole.SERVER_OWNER)
 
     async def addAdmin(self, message: discord.Message, serverSettings: ServerSettings):
-        self.startSqlEntry()
-        self.ensureServerEntry(serverSettings)
-        if len(message.mentions) == 0:
-            await message.channel.send("Please mention a user to add as an admin")
-            return
-        for mention in message.mentions:
-            user = self.Session.query(AuthUser).filter(AuthUser.serverId == serverSettings.serverId, AuthUser.userId == mention.id).first() # type: AuthUser
-            if user:
-                if user.role == UserRole.ADMIN or user.role == UserRole.SERVER_OWNER:
-                    await message.channel.send("User is already an admin")
-                    return
-                user.role = UserRole.ADMIN
-                user.updatedAt = datetime.datetime.now(datetime.UTC)
-            else:
-                user = AuthUser(serverId=serverSettings.serverId, userId=mention.id, role=UserRole.ADMIN, userName=mention.name)
-                self.Session.add(user)
-        self.Session.commit()
-        self.voidseeker.rebuildServerSettings(serverSettings)
-        await message.channel.send("Added admin!")
+        await self._promoteUserToRole(message, serverSettings, UserRole.ADMIN)
 
     async def removeAdmin(self, message: discord.Message, serverSettings: ServerSettings):
-        self.startSqlEntry()
-        if len(message.mentions) == 0:
-            await message.channel.send("Please mention a user to remove as an admin")
-            return
-        for mention in message.mentions:
-            user = self.Session.query(AuthUser).filter(AuthUser.serverId == serverSettings.serverId, AuthUser.userId == mention.id).first() # type: AuthUser
-            if user:
-                if user.role == UserRole.ADMIN:
-                    self.Session.delete(user)
-                else:
-                    await message.channel.send("User is not an admin")
-                    return
-            else:
-                await message.channel.send("User is not an admin")
-                return
-        self.Session.commit()
-        self.voidseeker.rebuildServerSettings(serverSettings)
-        await message.channel.send("removed admin!")
+        await self._removeUserFromRole(message, serverSettings, UserRole.ADMIN)
 
     async def addMod(self, message: discord.Message, serverSettings: ServerSettings):
-        self.startSqlEntry()
-        self.ensureServerEntry(serverSettings)
-        if len(message.mentions) == 0:
-            await message.channel.send("Please mention a user to add as an moderator")
-            return
-        for mention in message.mentions:
-            user = self.Session.query(AuthUser).filter(AuthUser.serverId == serverSettings.serverId,
-                                                       AuthUser.userId == mention.id).first()  # type: AuthUser
-            if user:
-                if user.role == UserRole.ADMIN or user.role == UserRole.SERVER_OWNER:
-                    await message.channel.send("User is an admin")
-                    return
-                elif user.role == UserRole.MOD:
-                    await message.channel.send("User is already a moderator")
-            else:
-                user = AuthUser(serverId=serverSettings.serverId, userId=mention.id, role=UserRole.MOD,
-                                userName=mention.name)
-                self.Session.add(user)
-        self.Session.commit()
-        self.voidseeker.rebuildServerSettings(serverSettings)
-        await message.channel.send("Added moderator!")
+        await self._promoteUserToRole(message, serverSettings, UserRole.MOD)
 
     async def removeMod(self, message: discord.Message, serverSettings: ServerSettings):
-        self.startSqlEntry()
-        if len(message.mentions) == 0:
-            await message.channel.send("Please mention a user to remove as an moderator")
-            return
-        for mention in message.mentions:
-            user = self.Session.query(AuthUser).filter(AuthUser.serverId == serverSettings.serverId,
-                                                       AuthUser.userId == mention.id).first()  # type: AuthUser
-            if user:
-                if user.role == UserRole.MOD:
-                    self.Session.delete(user)
-                else:
-                    await message.channel.send("User is not an moderator")
-                    return
-            else:
-                await message.channel.send("User is not an moderator")
-                return
-        self.Session.commit()
-        self.voidseeker.rebuildServerSettings(serverSettings)
-        await message.channel.send("removed moderator!")
+        await self._removeUserFromRole(message, serverSettings, UserRole.MOD)
