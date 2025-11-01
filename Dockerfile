@@ -39,7 +39,7 @@ RUN pip3 install -r requirements.txt
 
 # Copy bot to docker
 COPY libvoidseeker libvoidseeker
-COPY docker/startup.sh ./
+COPY docker/startup.sh ./startup.sh
 COPY migrations migrations
 COPY voidseeker.py ./
 

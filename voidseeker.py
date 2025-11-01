@@ -149,6 +149,6 @@ class VoidSeeker(discord.Client):
             if TEST_MODE.lower() == "yes":
                 print(trace)
 
-
+print("here")
 client = VoidSeeker(LOGGER)
 client.run(TOKEN)
