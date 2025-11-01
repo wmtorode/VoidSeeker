@@ -11,4 +11,3 @@ class HoneyPotChannel(ModelBase):
     serverId = Column(BigInteger, default=0, index=True)
     messageId = Column(BigInteger, default=0)
     channelId = Column(BigInteger, default=0)
-    banCount = Column(BigInteger, default=0)

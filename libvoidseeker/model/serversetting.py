@@ -15,5 +15,6 @@ class ServerSetting(ModelBase):
     heuristicsEnabled = Column(Boolean, default=False)
     banOnPingAll = Column(Boolean, default=False)
     createdAt = Column(DateTime, default=datetime.datetime.now(datetime.UTC))
-    updatedAt = Column(DateTime)
+    updatedAt = Column(DateTime),
+    banCount = Column(BigInteger, default=0)
 

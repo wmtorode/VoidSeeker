@@ -1,6 +1,5 @@
 import discord
 import discord.ui
-from discord.ui import ChannelSelect
 
 from ...data import ServerSettings
 
@@ -44,12 +43,6 @@ class HoneypotConfigModal(AutoDeferModal):
         self.add_item(self.honeyPotSelectLabel)
         self.add_item(self.honeyPotText)
 
-    async def honeyPotCallback(self, value):
-        self.data.honeyPotChannelEnabled = value
-
-    async def channelCallback(self, values):
-        print(values[0])
-
     async def on_submit(self, interaction: discord.Interaction):
 
         self.enableSelect.updateSelectedValue()
@@ -58,8 +51,5 @@ class HoneypotConfigModal(AutoDeferModal):
         if self.data.honeyPotChannelEnabled:
             self.data.honeyPotChannelId = self.honeyPotChannelSelect.values[0].id
             self.data.honeyPotChannelText = self.honeyPotText.value
-
-        content = "Test Content, do more later"
-        await interaction.response.edit_message(content=content, embed=None, view=None)
 
         self.stop()

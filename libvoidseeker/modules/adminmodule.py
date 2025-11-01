@@ -2,8 +2,8 @@ import datetime
 
 import discord
 
-from ..data import Command, UserRole, ServerSettings
-from ..model import AuthUser
+from ..data import Command, UserRole, ServerSettings, TermType
+from ..model import AuthUser, ServerSetting, BanTerm, HoneyPotChannel, ImmuneRole
 from ..ui import StartSpamConfigView
 from .basemodule import BaseModule
 
@@ -84,6 +84,61 @@ class AdminModule(BaseModule):
         self.Session.commit()
         self.voidseeker.rebuildServerSettings(serverSettings)
         await message.channel.send(f"removed {role}!")
+
+    async def persistServerSettings(self, userId, serverSettings: ServerSettings):
+        self.startSqlEntry()
+
+        baseSettings = self.Session.query(ServerSetting).filter(
+            ServerSetting.serverId == serverSettings.serverId).first()
+
+        if not baseSettings:
+            baseSettings = ServerSetting()
+            baseSettings.serverId = serverSettings.serverId
+
+        baseSettings.honeyPotEnabled = serverSettings.honeyPotChannelEnabled
+        baseSettings.honeyPotText = serverSettings.honeyPotChannelText
+        baseSettings.heuristicsEnabled = serverSettings.antiSpamHeuristicsEnabled
+        baseSettings.banOnPingAll = serverSettings.banOnPingAll
+        baseSettings.updatedAt = datetime.datetime.now(datetime.UTC)
+
+        self.Session.add(baseSettings)
+
+        if(serverSettings.honeyPotChannelEnabled):
+            honeyPotChannel = self.Session.query(HoneyPotChannel).filter(
+                HoneyPotChannel.serverId == serverSettings.serverId).first()
+
+            if not honeyPotChannel:
+                honeyPotChannel = HoneyPotChannel()
+                honeyPotChannel.serverId = serverSettings.serverId
+
+            if honeyPotChannel.channelId != serverSettings.honeyPotChannelId:
+                honeyPotChannel.messageId = 0
+
+            honeyPotChannel.channelId = serverSettings.honeyPotChannelId
+            self.Session.add(honeyPotChannel)
+
+        antiSpamImmuneRoles = self.Session.query(ImmuneRole).filter(
+            ImmuneRole.serverId == serverSettings.serverId).all()
+
+        roleIds = []
+        for role in antiSpamImmuneRoles:
+            roleIds.append(role.roleId)
+            if role.roleId not in serverSettings.antiSpamImmuneRoles:
+                self.Session.delete(role)
+
+        for role in serverSettings.antiSpamImmuneRoles:
+            if role not in roleIds:
+                self.Session.add(ImmuneRole(serverId=serverSettings.serverId, roleId=role, addedByUserId=userId))
+
+        if serverSettings.antiSpamHeuristicsEnabled:
+            self.Session.query(BanTerm).filter(BanTerm.serverId == serverSettings.serverId).delete()
+            for term in serverSettings.spamTerms:
+                self.Session.add(BanTerm(serverId=serverSettings.serverId, term=term.lower().strip(), termType=TermType.TERM, addedByUserId=userId))
+            for url in serverSettings.spamUrls:
+                self.Session.add(BanTerm(serverId=serverSettings.serverId, term=url.lower().strip(), termType=TermType.URL, addedByUserId=userId))
+
+        self.Session.commit()
+
 
     async def startAntiSpamConfig(self, message: discord.Message, serverSettings: ServerSettings):
         view = StartSpamConfigView(self.voidseeker, message.author.id, serverSettings)

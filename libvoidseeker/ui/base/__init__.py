@@ -4,3 +4,4 @@ from .autodeferview import AutoDeferView
 from .numberselect import NumberSelect
 from .booleanselect import BooleanSelect
 from .channelselect import CustomChannelSelect
+from .roleselect import CustomRoleSelect
