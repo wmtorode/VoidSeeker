@@ -17,4 +17,5 @@ class ServerSetting(ModelBase):
     createdAt = Column(DateTime, default=datetime.datetime.now(datetime.UTC))
     updatedAt = Column(DateTime)
     banCount = Column(BigInteger, default=0)
+    heuristicsBanText = Column(UnicodeText, default="")
 

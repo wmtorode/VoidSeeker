@@ -14,8 +14,10 @@ class ServerSettings:
         self.honeyPotChannelId = 0
         self.honeyPotChannelText = ""
         self.antiSpamImmuneRoles = []
+        self.modRoles = []
 
         self.antiSpamHeuristicsEnabled = False
+        self.heuristicsBanMessage = ""
         self.spamTerms = []
         self.spamUrls = []
         self.banOnPingAll = False
@@ -23,12 +25,14 @@ class ServerSettings:
         self._adminNames = []
         self._modNames = []
         self._roleNames = []
+        self._modRoleNames = []
 
     def initSettings(self, serverSettingDb: ServerSetting, honeyPotChannel: HoneyPotChannel, authUsers: list, antiSpamImmuneRoles: list, banTerms: list, roles: list):
         self.honeyPotChannelEnabled = serverSettingDb.honeyPotEnabled
         self.honeyPotChannelText = serverSettingDb.honeyPotText
         self.antiSpamHeuristicsEnabled = serverSettingDb.heuristicsEnabled
         self.banOnPingAll = serverSettingDb.banOnPingAll
+        self.heuristicsBanMessage = serverSettingDb.heuristicsBanText
 
         self.honeyPotChannelId = 0
         self.serverAdmins.clear()
@@ -39,6 +43,8 @@ class ServerSettings:
         self._adminNames.clear()
         self._modNames.clear()
         self._roleNames.clear()
+        self.modRoles.clear()
+        self._modRoleNames.clear()
 
         if honeyPotChannel:
             self.honeyPotChannelId = honeyPotChannel.channelId
@@ -50,6 +56,12 @@ class ServerSettings:
             elif user.role == UserRole.MOD:
                 self.serverModerators.append(user.userId)
                 self._modNames.append(user.userName)
+            elif user.role == UserRole.MODROLE:
+                self.modRoles.append(user.userId)
+                for discordRole in roles:  # type: discord.Role
+                    if discordRole.id == user.userId:
+                        self._modRoleNames.append(f"{discordRole.name} (role)")
+
 
         for role in antiSpamImmuneRoles: # type: ImmuneRole
             self.antiSpamImmuneRoles.append(role.roleId)
@@ -77,7 +89,8 @@ class ServerSettings:
 
     @property
     def modList(self):
-        return self._renderList(self._modNames)
+        modList = self._modNames + self._modRoleNames
+        return self._renderList(modList)
 
     @property
     def antiSpamImmuneList(self):

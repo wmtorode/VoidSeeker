@@ -34,11 +34,23 @@ class HeuristicsConfigModal(AutoDeferModal):
             style=discord.TextStyle.paragraph
         )
 
+        self.spamBanText = discord.ui.TextInput(
+            label='Message on Ban',
+            placeholder='The message to place into the channel on a ban occuring',
+            min_length=0,
+            max_length=2000,
+            required=False,
+            default=self.data.heuristicsBanMessage,
+            row=3,
+            style=discord.TextStyle.paragraph
+        )
+
         self.enableSelectLabel = discord.ui.Label(text="Enable Honey Pot Channel", component=self.enableSelect)
 
         self.add_item(self.enableSelectLabel)
         self.add_item(self.spamTermsText)
         self.add_item(self.spamUrlsText)
+        self.add_item(self.spamBanText)
 
     async def on_submit(self, interaction: discord.Interaction):
 
@@ -48,8 +60,5 @@ class HeuristicsConfigModal(AutoDeferModal):
         if self.data.antiSpamHeuristicsEnabled:
             self.data.spamTerms = self.spamTermsText.value.replace('\n', '').split(',')
             self.data.spamUrls = self.spamUrlsText.value.replace('\n', '').split(',')
-
-        # content = "Test Content, do more later"
-        # await interaction.response.edit_message(content=content, embed=None, view=None)
-
+            self.data.heuristicsBanMessage = self.spamBanText.value
         self.stop()

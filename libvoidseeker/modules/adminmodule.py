@@ -1,4 +1,5 @@
 import datetime
+import sys
 
 import discord
 
@@ -11,32 +12,41 @@ from .basemodule import BaseModule
 
 class AdminModule(BaseModule):
 
-    addAdminCmd = BaseModule.CmdPrefix + "aAdmin"
-    removeAdminCmd = BaseModule.CmdPrefix + "rAdmin"
+    addAdminCmd = BaseModule.CmdPrefix + "admin"
+    removeAdminCmd = BaseModule.CmdPrefix + "radmin"
 
-    addServerOwnerCmd = BaseModule.CmdPrefix + "aSOwner"
-    removeServerOwnerCmd = BaseModule.CmdPrefix + "rSOwner"
+    addServerOwnerCmd = BaseModule.CmdPrefix + "sowner"
+    removeServerOwnerCmd = BaseModule.CmdPrefix + "rsowner"
 
-    addModeratorCmd = BaseModule.CmdPrefix + "aModerator"
-    removeModeratorCmd = BaseModule.CmdPrefix + "rModerator"
+    addModeratorCmd = BaseModule.CmdPrefix + "moderator"
+    removeModeratorCmd = BaseModule.CmdPrefix + "rmoderator"
 
-    startAntiSpamConfigCmd = BaseModule.CmdPrefix + "sConfig"
+    addModRoleCmd = BaseModule.CmdPrefix + "modrole"
+    removeModRoleCmd = BaseModule.CmdPrefix + "rmodrole"
+
+    startAntiSpamConfigCmd = BaseModule.CmdPrefix + "configure"
+
+    restartBotCmd = BaseModule.CmdPrefix + "selfdestruct"
 
     RoleRanks = {
         UserRole.ADMIN: 10,
         UserRole.MOD: 5,
+        UserRole.MODROLE: 5,
         UserRole.SERVER_OWNER: 25
     }
 
 
     def registerCommands(self):
         return {
+            self.restartBotCmd: Command(self.shutdownBot, "restarts the bot", self.ownerAuth),
             self.addServerOwnerCmd: Command(self.addServerOwner, "Adds a server owner to the server", self.ownerAuth),
             self.removeServerOwnerCmd: Command(self.removeServerOwner, "Removes a server owner from the server", self.ownerAuth),
             self.addAdminCmd: Command(self.addAdmin, "Adds an admin to the server", self.adminAuth),
             self.removeAdminCmd: Command(self.removeAdmin, "Removes an admin from the server", self.adminAuth),
             self.addModeratorCmd: Command(self.addMod, "Adds a moderator to the server", self.adminAuth),
             self.removeModeratorCmd: Command(self.removeMod, "Removes a moderator from the server", self.adminAuth),
+            self.addModRoleCmd: Command(self.addModRole, "Adds an entire role as a moderator", self.adminAuth),
+            self.removeModRoleCmd: Command(self.removeModRole, "Removes an entire role as a moderator", self.adminAuth),
             self.startAntiSpamConfigCmd: Command(self.startAntiSpamConfig, "Starts the Anti-Spambot Configuration Wizard", self.adminAuth)
         }
 
@@ -84,6 +94,12 @@ class AdminModule(BaseModule):
         self.Session.commit()
         self.voidseeker.rebuildServerSettings(serverSettings)
         await message.channel.send(f"removed {role}!")
+
+    async def removeUserAuth(self, userId, serverSettings: ServerSettings):
+        self.startSqlEntry()
+        self.Session.query(AuthUser).filter(AuthUser.serverId == serverSettings.serverId,
+                                            AuthUser.userId == userId).delete()
+        self.Session.commit()
 
     async def persistServerSettings(self, userId, serverSettings: ServerSettings):
         self.startSqlEntry()
@@ -161,3 +177,14 @@ class AdminModule(BaseModule):
 
     async def removeMod(self, message: discord.Message, serverSettings: ServerSettings):
         await self._removeUserFromRole(message, serverSettings, UserRole.MOD)
+
+    async def addModRole(self, message: discord.Message, serverSettings: ServerSettings):
+        await self._promoteUserToRole(message, serverSettings, UserRole.MODROLE)
+
+    async def removeModRole(self, message: discord.Message, serverSettings: ServerSettings):
+        await self._removeUserFromRole(message, serverSettings, UserRole.MODROLE)
+
+    async def shutdownBot(self, message: discord.Message):
+        await message.channel.send(self.makeInformationalEmbed("self-destruct sequence activated!"))
+        await self.voidseeker.close()
+        sys.exit(0)

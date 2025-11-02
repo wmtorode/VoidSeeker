@@ -16,8 +16,9 @@ class BanAction(ModelBase):
     createdAt = Column(DateTime)
     joinedAt = Column(DateTime)
     detectionMethod = Column(String(length=64), default="")
+    banId = Column(Integer, default=0)
 
     @property
     def pStat(self):
-        return f'{self.userName:<34}{self.createdAt.isoformat(sep=" ", timespec="minutes"):>18} {self.joinedAt.isoformat(sep=" ", timespec="minutes"):>18} {self.bannedAt.isoformat(sep=" ", timespec="minutes"):>18} {self.userId}\n'
+        return f'{self.banId:<8} {self.userName:<34} {self.bannedAt.isoformat(sep=" ", timespec="minutes"):>18} {self.userId}\n'
 

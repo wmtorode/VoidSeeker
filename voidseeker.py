@@ -70,6 +70,7 @@ class VoidSeeker(discord.Client):
         self.baseModule = None
         self.statusModule = None
         self.adminModule = None
+        self.modModule = None
         self.settings = BotSettings()
 
         self.modules = []
@@ -82,10 +83,12 @@ class VoidSeeker(discord.Client):
 
         self.statusModule = StatusModule(self.logger, self.settings, self.Session, self, STORE_DIR)
         self.adminModule = AdminModule(self.logger, self.settings, self.Session, self, STORE_DIR)
+        self.modModule = ModModule(self.logger, self.settings, self.Session, self, STORE_DIR)
 
         self.modules = [
             self.statusModule,
-            self.adminModule
+            self.adminModule,
+            self.modModule
         ]
 
         for module in self.modules:
@@ -99,6 +102,9 @@ class VoidSeeker(discord.Client):
         print(f'{self.user} has connected to Discord, using PY: {platform.python_version()}, DS: {discord.__version__}')
         if not self.initComplete:
             self.initModulesAndCommands()
+
+    async def on_member_remove(self, member: discord.Member):
+        await self.adminModule.removeUserAuth(member.id, self.baseModule.getSettings(member.guild.id))
 
     def initSettings(self):
         self.baseModule.startSqlEntry()
@@ -149,6 +155,5 @@ class VoidSeeker(discord.Client):
             if TEST_MODE.lower() == "yes":
                 print(trace)
 
-print("here")
 client = VoidSeeker(LOGGER)
 client.run(TOKEN)

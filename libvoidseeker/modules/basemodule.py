@@ -15,13 +15,13 @@ TEST_MODE = os.getenv("TEST_MODE", default="No")
 
 class BaseModule:
 
-    CmdPrefix = "!"
-    CollidingPrefix = "$"
-    NativeCommandPrefix = "&"
+    CmdPrefix = "!vs"
+    CollidingPrefix = "$vs"
+    NativeCommandPrefix = "&vs"
     if TEST_MODE.lower() == "yes":
-        CmdPrefix = "v!"
-        CollidingPrefix = "v$"
-        NativeCommandPrefix = "v&"
+        CmdPrefix = "vs!"
+        CollidingPrefix = "vs$"
+        NativeCommandPrefix = "vs&"
 
     def __init__(self, logger: logging.Logger, settings: BotSettings, dbSession, voidseeker: discord.Client, storeDir):
         self.logger = logger
@@ -63,6 +63,17 @@ class BaseModule:
             return ltMsg[1:]
         else:
             return None
+
+    def getIntValue(self, message, default=10):
+        iValue = default
+        sValue = self.parseMsg(message)
+        if sValue:
+            try:
+                iValue = int(sValue)
+            except:
+                return
+
+        return iValue
 
     async def chunkMsgs(self, stMsg, message: discord.Message, codeblock, chunkedChar=None):
         breakChar = ' '

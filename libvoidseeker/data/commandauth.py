@@ -1,3 +1,6 @@
+import discord
+
+
 class CommandAuth:
 
     def __init__(self, owners, restrict, allowAdmins, allowMods):
@@ -6,7 +9,7 @@ class CommandAuth:
         self.allowAdmins = allowAdmins
         self.allowMods = allowMods
 
-    def canRun(self, author, serverSettings) -> bool:
+    def canRun(self, author: discord.Member, serverSettings) -> bool:
         if self.restrict:
             try:
                 if author.id in self.owners:
@@ -15,6 +18,11 @@ class CommandAuth:
                     return True
                 if self.allowMods and author.id in serverSettings.serverModerators:
                     return True
+                if self.allowMods:
+                    roles = author.roles
+                    for role in roles:
+                        if role.id in serverSettings.modRoles:
+                            return True
             except:
                 pass
             return False
