@@ -184,7 +184,7 @@ class AdminModule(BaseModule):
     async def removeModRole(self, message: discord.Message, serverSettings: ServerSettings):
         await self._removeUserFromRole(message, serverSettings, UserRole.MODROLE)
 
-    async def shutdownBot(self, message: discord.Message):
-        await message.channel.send(self.makeInformationalEmbed("self-destruct sequence activated!"))
+    async def shutdownBot(self, message: discord.Message, serverSettings: ServerSettings):
+        await message.channel.send(embed=self.makeInformationalEmbed("self-destruct sequence activated!"))
         await self.voidseeker.close()
         sys.exit(0)

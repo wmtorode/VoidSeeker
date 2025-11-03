@@ -49,7 +49,7 @@ class LegacyModule(BaseModule):
                 ban.bannedAt = datetime.datetime.fromisoformat(historicBan["bannedAt"])
                 ban.createdAt = datetime.datetime.fromisoformat(historicBan["createdAt"])
                 ban.joinedAt = datetime.datetime.fromisoformat(historicBan["joinedAt"])
-                ban.DetectionType = DetectionType.Unknown
+                ban.detectionMethod = DetectionType.Unknown
                 servers[bannedFromServer].banCount += 1
                 ban.banId = servers[bannedFromServer].banCount
                 self.Session.add(ban)
@@ -59,6 +59,7 @@ class LegacyModule(BaseModule):
 
             self.Session.commit()
 
+        self.voidseeker.initSettings()
         await message.channel.send(embed=self.makeSuccessEmbed("Imported Historic Data"))
         await message.delete(delay=2)
 

@@ -52,7 +52,8 @@ class StatusModule(BaseModule):
         embed.add_field(name="Honey Pot Enabled", value=str(serverSettings.honeyPotChannelEnabled), inline=True)
         embed.add_field(name="Honey Pot Channel ID", value=str(serverSettings.honeyPotChannelId), inline=True)
         embed.add_field(name="Ban when pings everyone", value=str(serverSettings.banOnPingAll), inline=True)
-        embed.add_field(name="Anti-Spam Heuristics Enabled", value=str(serverSettings.antiSpamHeuristicsEnabled), inline=True)
+        embed.add_field(name="Anti-Spam Heuristics Enabled", value=str(serverSettings.antiSpamHeuristicsEnabled),
+                        inline=True)
 
         if serverSettings.honeyPotChannelEnabled:
             embed.add_field(name="Honey Pot Channel Text", value=serverSettings.honeyPotChannelText, inline=False)
@@ -67,7 +68,8 @@ class StatusModule(BaseModule):
         embed.add_field(name="Admins", value=serverSettings.adminList, inline=True)
         embed.add_field(name="Moderators", value=serverSettings.modList, inline=True)
 
-        embed.set_footer(text=f"VoidSeeker Config for server: {message.guild.name}", icon_url=self.user.display_avatar.url)
+        embed.set_footer(text=f"{self.user.display_name} Config for server: {message.guild.name}",
+                         icon_url=self.user.display_avatar.url)
 
         await message.channel.send(embed=embed)
 

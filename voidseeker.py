@@ -120,6 +120,7 @@ class VoidSeeker(discord.Client):
         await self.adminModule.removeUserAuth(member.id, self.baseModule.getSettings(member.guild.id))
 
     def initSettings(self):
+        self.settings.serverSettings.clear()
         self.baseModule.startSqlEntry()
         servers = self.Session.query(ServerSetting).all()
         for server in servers:
