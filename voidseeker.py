@@ -71,6 +71,8 @@ class VoidSeeker(discord.Client):
         self.statusModule = None
         self.adminModule = None
         self.modModule = None
+        self.spamModule = None
+        self.legacyModule = None
         self.settings = BotSettings()
 
         self.modules = []
@@ -84,12 +86,21 @@ class VoidSeeker(discord.Client):
         self.statusModule = StatusModule(self.logger, self.settings, self.Session, self, STORE_DIR)
         self.adminModule = AdminModule(self.logger, self.settings, self.Session, self, STORE_DIR)
         self.modModule = ModModule(self.logger, self.settings, self.Session, self, STORE_DIR)
+        self.spamModule = SpamModule(self.logger, self.settings, self.Session, self, STORE_DIR)
+        self.legacyModule = LegacyModule(self.logger, self.settings, self.Session, self, STORE_DIR)
 
         self.modules = [
             self.statusModule,
             self.adminModule,
-            self.modModule
+            self.modModule,
+            self.spamModule,
+            self.legacyModule
         ]
+
+        if self.baseModule.isInTestMode:
+            testModule = TestModule(self.logger, self.settings, self.Session, self, STORE_DIR)
+            self.modules.append(testModule)
+
 
         for module in self.modules:
             commands = module.registerCommands()
@@ -98,10 +109,12 @@ class VoidSeeker(discord.Client):
         self.initComplete = True
 
     async def on_ready(self):
-        self.logger.info(f'{self.user} has connected to Discord!')
-        print(f'{self.user} has connected to Discord, using PY: {platform.python_version()}, DS: {discord.__version__}')
+        msg = f'{self.user} has connected to Discord, using PY: {platform.python_version()}, DS: {discord.__version__}'
+        self.logger.info(msg)
+        print(msg)
         if not self.initComplete:
             self.initModulesAndCommands()
+            await self.spamModule.initHoneyPots()
 
     async def on_member_remove(self, member: discord.Member):
         await self.adminModule.removeUserAuth(member.id, self.baseModule.getSettings(member.guild.id))
@@ -115,6 +128,14 @@ class VoidSeeker(discord.Client):
             self.settings.serverSettings[server.serverId] = settings
 
     def rebuildServerSettings(self, serverSettings: ServerSettings):
+
+        for guild in self.guilds:
+            if serverSettings.serverId == guild.id:
+                break
+        else:
+            self.logger.info(f"application is not part of guild: {serverSettings.serverId}")
+            return
+
         self.baseModule.startSqlEntry()
         baseSettings = self.Session.query(ServerSetting).filter(ServerSetting.serverId == serverSettings.serverId).first()
         honeyPotChannel = self.Session.query(HoneyPotChannel).filter(HoneyPotChannel.serverId == serverSettings.serverId).first()
@@ -127,9 +148,14 @@ class VoidSeeker(discord.Client):
         serverSettings.initSettings(baseSettings, honeyPotChannel, authUsers, antiSpamImmuneRoles, banTerms, roles)
 
     async def on_message(self, message:discord.Message):
+        if not self.initComplete:
+            self.logger.info("Bot not yet ready to handle messages")
+            return
 
         try:
             if message.author == self.user:
+                return
+            if await self.spamModule.checkIfSpambot(message):
                 return
             for user in message.mentions: # type: discord.abc.User
                 if user.mention == self.user.mention:

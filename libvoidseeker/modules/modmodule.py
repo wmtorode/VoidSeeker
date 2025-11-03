@@ -24,7 +24,7 @@ class ModModule(BaseModule):
             await message.channel.send("Error: Could not read number of entries to fetch")
 
         self.startSqlEntry()
-        subs = self.db.query(BanAction).filter(BanAction.serverId == serverSettings.serverId).order_by(BanAction.id.desc()).limit(reportsToView).all()
+        subs = self.Session.query(BanAction).filter(BanAction.serverId == serverSettings.serverId).order_by(BanAction.id.desc()).limit(reportsToView).all()
         msg = f'viewing last {reportsToView} entries:\n{"Ban Id":<8}{"  User Name":<34}{"  Created At":^18} {"  Joined At":^18} {"  Banned At":^18} {"User ID":^21}\n'
         for sub in subs:  # type: BanAction
             msg += sub.pStat

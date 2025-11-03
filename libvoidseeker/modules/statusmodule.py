@@ -61,6 +61,9 @@ class StatusModule(BaseModule):
         embed.add_field(name="Ban Terms", value=serverSettings.spamTermList, inline=False)
         embed.add_field(name="Ban Urls", value=serverSettings.spamUrlList, inline=False)
 
+        if serverSettings.antiSpamHeuristicsEnabled:
+            embed.add_field(name="Heuristics Ban Text", value=serverSettings.heuristicsBanMessage, inline=False)
+
         embed.add_field(name="Admins", value=serverSettings.adminList, inline=True)
         embed.add_field(name="Moderators", value=serverSettings.modList, inline=True)
 

@@ -32,6 +32,7 @@ class BaseModule:
         self.ownerAuth = CommandAuth(self.voidseeker.ownerIds, True, False, False)
         self.adminAuth = CommandAuth(self.voidseeker.ownerIds, True, True, False)
         self.modAuth = CommandAuth(self.voidseeker.ownerIds, True, True, True)
+        self.isInTestMode = TEST_MODE.lower() == "yes"
 
 
 

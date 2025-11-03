@@ -72,7 +72,7 @@ class SpamModule(BaseModule):
         serverSettingDb = self.Session.query(ServerSetting).filter(ServerSetting.serverId == serverSettings.serverId).first() # type: ServerSetting
         serverSettingDb.banCount += 1
         honeyPotChannel = self.Session.query(HoneyPotChannel).filter(HoneyPotChannel.serverId == serverSettings.serverId).first()
-
+        serverSettings.banCount = serverSettingDb.banCount
 
         banAction = BanAction()
         banAction.serverId = serverSettings.serverId
@@ -82,6 +82,7 @@ class SpamModule(BaseModule):
         banAction.joinedAt = message.author.joined_at
         banAction.bannedAt = datetime.datetime.now(datetime.UTC)
         banAction.detectionMethod = detectionMethod
+        banAction.banId = serverSettings.banCount
         self.Session.add(serverSettings)
         self.Session.add(banAction)
 
@@ -99,26 +100,26 @@ class SpamModule(BaseModule):
 
         guild = message.guild
         self.Session.commit()
-        await self._updateHoneyPotMessage(guild, serverSettings, honeyPotChannel, serverSettingDb)
+        await self._updateHoneyPotMessage(guild, serverSettings, honeyPotChannel)
 
-    async def _makeHoneyPotMessage(self, guild: discord.Guild, serverSettings: ServerSettings, hpChannel: HoneyPotChannel, serverDb: ServerSetting):
+    async def _makeHoneyPotMessage(self, guild: discord.Guild, serverSettings: ServerSettings, hpChannel: HoneyPotChannel):
         channel = guild.get_channel(hpChannel.channelId)
-        message = await channel.send(serverSettings.honeyPotChannelText.format(serverDb.banCount))
+        message = await channel.send(serverSettings.honeyPotChannelText.format(serverSettings.banCount))
         hpChannel.messageId = message.id
 
-    async def _updateHoneyPotMessage(self, guild: discord.Guild, serverSettings: ServerSettings, hpChannel: HoneyPotChannel, serverDb: ServerSetting):
+    async def _updateHoneyPotMessage(self, guild: discord.Guild, serverSettings: ServerSettings, hpChannel: HoneyPotChannel):
         if hpChannel:
             channel = guild.get_channel(hpChannel.channelId)
             try:
                 message = await channel.fetch_message(hpChannel.messageId)
-                await message.edit(content=serverSettings.honeyPotChannelText.format(serverDb.banCount))
+                await message.edit(content=serverSettings.honeyPotChannelText.format(serverSettings.banCount))
             except:
                 self.logger.critical("HoneyPot Message update failure!")
                 trace = traceback.format_exc()
                 for line in trace.split('\n'):
                     self.logger.error(line)
 
-    async def initHoneyPotChannel(self, serverSettings: ServerSettings, serverDb: ServerSetting):
+    async def initHoneyPotChannel(self, serverSettings: ServerSettings):
         if serverSettings.honeyPotChannelEnabled:
             hpChannel = self.Session.query(HoneyPotChannel).filter(HoneyPotChannel.serverId == serverSettings.serverId).first()
             if not hpChannel:
@@ -129,18 +130,20 @@ class SpamModule(BaseModule):
             guild = self.voidseeker.get_guild(serverSettings.serverId)
             if serverSettings.honeyPotChannelId != hpChannel.channelId:
                 hpChannel.channelId = serverSettings.honeyPotChannelId
-                await self._makeHoneyPotMessage(guild, serverSettings, hpChannel, serverDb)
+                await self._makeHoneyPotMessage(guild, serverSettings, hpChannel)
             else:
                 channel = self.voidseeker.get_channel(hpChannel.channelId)
                 try:
                     message = await channel.fetch_message(hpChannel.messageId)
+                    expectedText = serverSettings.honeyPotChannelText.format(serverSettings.banCount)
+                    if message.content.lower() != expectedText.lower():
+                        await self._updateHoneyPotMessage(guild, serverSettings, hpChannel)
                 except:
-                    await self._makeHoneyPotMessage(guild, serverSettings, hpChannel, serverDb)
+                    await self._makeHoneyPotMessage(guild, serverSettings, hpChannel)
 
 
-    async def initOnlyBans(self):
+    async def initHoneyPots(self):
         self.startSqlEntry()
         for setting in self.settings.serverSettings.values():
-            serverSettingsDb = self.Session.query(ServerSettings).filter(ServerSetting.serverId == setting.serverId).first()
-            await self.initHoneyPotChannel(setting, serverSettingsDb)
+            await self.initHoneyPotChannel(setting)
         self.Session.commit()

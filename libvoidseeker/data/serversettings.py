@@ -26,6 +26,7 @@ class ServerSettings:
         self._modNames = []
         self._roleNames = []
         self._modRoleNames = []
+        self.banCount = 0
 
     def initSettings(self, serverSettingDb: ServerSetting, honeyPotChannel: HoneyPotChannel, authUsers: list, antiSpamImmuneRoles: list, banTerms: list, roles: list):
         self.honeyPotChannelEnabled = serverSettingDb.honeyPotEnabled
@@ -33,6 +34,7 @@ class ServerSettings:
         self.antiSpamHeuristicsEnabled = serverSettingDb.heuristicsEnabled
         self.banOnPingAll = serverSettingDb.banOnPingAll
         self.heuristicsBanMessage = serverSettingDb.heuristicsBanText
+        self.banCount = serverSettingDb.banCount
 
         self.honeyPotChannelId = 0
         self.serverAdmins.clear()
