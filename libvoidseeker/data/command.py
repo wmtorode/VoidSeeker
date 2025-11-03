@@ -45,7 +45,7 @@ class Command:
             canRun = await self.canRunRestrictedCommand(message, self.restriction, serverSettings)
         if canRun:
             try:
-                await message.channel.trigger_typing()
+                await message.channel.typing()
             except:
                 pass
             await self.fncPointer(message, serverSettings)

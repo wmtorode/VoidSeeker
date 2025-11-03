@@ -50,13 +50,17 @@ class AdminModule(BaseModule):
             self.startAntiSpamConfigCmd: Command(self.startAntiSpamConfig, "Starts the Anti-Spambot Configuration Wizard", self.adminAuth)
         }
 
-    async def _promoteUserToRole(self, message: discord.Message, serverSettings: ServerSettings, role):
+    async def _promoteUserToRole(self, message: discord.Message, serverSettings: ServerSettings, role, isRole=False):
         self.startSqlEntry()
         self.ensureServerEntry(serverSettings)
-        if len(message.mentions) == 0:
+        mentions = message.mentions
+        if isRole:
+            mentions = message.role_mentions
+
+        if len(mentions) == 0:
             await message.channel.send(f"Please mention a user to add as a {role}")
             return
-        for mention in message.mentions:
+        for mention in mentions:
             user = self.Session.query(AuthUser).filter(AuthUser.serverId == serverSettings.serverId,
                                                        AuthUser.userId == mention.id).first()  # type: AuthUser
             if user:
@@ -74,12 +78,15 @@ class AdminModule(BaseModule):
         self.voidseeker.rebuildServerSettings(serverSettings)
         await message.channel.send(f"Added {role}!")
 
-    async def _removeUserFromRole(self, message: discord.Message, serverSettings: ServerSettings, role):
+    async def _removeUserFromRole(self, message: discord.Message, serverSettings: ServerSettings, role, isRole=False):
         self.startSqlEntry()
-        if len(message.mentions) == 0:
+        mentions = message.mentions
+        if isRole:
+            mentions = message.role_mentions
+        if len(mentions) == 0:
             await message.channel.send("Please mention a user to remove from the requested role")
             return
-        for mention in message.mentions:
+        for mention in mentions:
             user = self.Session.query(AuthUser).filter(AuthUser.serverId == serverSettings.serverId,
                                                        AuthUser.userId == mention.id).first()  # type: AuthUser
             if user:
@@ -116,6 +123,7 @@ class AdminModule(BaseModule):
         baseSettings.heuristicsEnabled = serverSettings.antiSpamHeuristicsEnabled
         baseSettings.banOnPingAll = serverSettings.banOnPingAll
         baseSettings.updatedAt = datetime.datetime.now(datetime.UTC)
+        baseSettings.heuristicsBanText = serverSettings.heuristicsBanMessage
 
         self.Session.add(baseSettings)
 
@@ -179,10 +187,10 @@ class AdminModule(BaseModule):
         await self._removeUserFromRole(message, serverSettings, UserRole.MOD)
 
     async def addModRole(self, message: discord.Message, serverSettings: ServerSettings):
-        await self._promoteUserToRole(message, serverSettings, UserRole.MODROLE)
+        await self._promoteUserToRole(message, serverSettings, UserRole.MODROLE, isRole=True)
 
     async def removeModRole(self, message: discord.Message, serverSettings: ServerSettings):
-        await self._removeUserFromRole(message, serverSettings, UserRole.MODROLE)
+        await self._removeUserFromRole(message, serverSettings, UserRole.MODROLE, isRole=True)
 
     async def shutdownBot(self, message: discord.Message, serverSettings: ServerSettings):
         await message.channel.send(embed=self.makeInformationalEmbed("self-destruct sequence activated!"))

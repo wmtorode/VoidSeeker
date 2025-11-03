@@ -19,7 +19,7 @@ class SpamModule(BaseModule):
             if self.checkForSpamMessage(message, serverSettings):
                 return await self.checkRoleAndBans(message, serverSettings, True, DetectionType.Heuristic)
         if serverSettings.honeyPotChannelEnabled:
-            if message.channel.id in serverSettings.honeyPotChannelId:
+            if message.channel.id == serverSettings.honeyPotChannelId:
                 self.logger.info("Detected new potential spambot!")
                 return await self.checkRoleAndBans(message, serverSettings, False, DetectionType.HoneyPot)
         return False
@@ -83,7 +83,6 @@ class SpamModule(BaseModule):
         banAction.bannedAt = datetime.datetime.now(datetime.UTC)
         banAction.detectionMethod = detectionMethod
         banAction.banId = serverSettings.banCount
-        self.Session.add(serverSettings)
         self.Session.add(banAction)
 
         try:
@@ -101,6 +100,7 @@ class SpamModule(BaseModule):
         guild = message.guild
         self.Session.commit()
         await self._updateHoneyPotMessage(guild, serverSettings, honeyPotChannel)
+        self.logger.info(f"Banned {message.author.name} for as a spambot!")
 
     async def _makeHoneyPotMessage(self, guild: discord.Guild, serverSettings: ServerSettings, hpChannel: HoneyPotChannel):
         channel = guild.get_channel(hpChannel.channelId)

@@ -6,11 +6,13 @@ import traceback
 import platform
 
 import discord
+import discord.utils
 import asyncio
 
 from sqlalchemy.orm import sessionmaker
 
 from libvoidseeker import *
+from libvoidseeker.utils import ColourFormatter
 
 
 def getIdList(stIds):
@@ -38,14 +40,25 @@ if not os.path.isdir(LOG_DIR):
 if not os.path.isdir(STORE_DIR):
     os.makedirs(STORE_DIR)
 
-LOGGER = logging.getLogger()
+LOGGER = logging.getLogger("voidseeker")
 LOGGER.setLevel(logging.INFO)
 obj_handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes=INT_MAX_LOG_SIZE, backupCount=5)
 obj_handler.setLevel(logging.INFO)
 obj_formatter = logging.Formatter('%(name)-18s %(levelname)-8s %(funcName)-25s %(asctime)-25s %(message)s')
 obj_handler.setFormatter(obj_formatter)
+obj_stdHandler = logging.StreamHandler()
+obj_stdHandler.setLevel(logging.INFO)
+obj_stdFormatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', '%Y-%m-%d %H:%M:%S', style='{')
+
 LOGGER.addHandler(obj_handler)
 
+if TEST_MODE.lower() == "yes":
+    LOGGER.setLevel(logging.DEBUG)
+    obj_handler.setLevel(logging.DEBUG)
+    obj_stdFormatter = ColourFormatter()
+
+obj_stdHandler.setFormatter(obj_stdFormatter)
+LOGGER.addHandler(obj_stdHandler)
 
 TOKEN = os.getenv("DISCORD_BOT_SECRET")
 OWNERS = getIdList(os.getenv("DISCORD_OWNING_USER_ID"))
@@ -111,7 +124,6 @@ class VoidSeeker(discord.Client):
     async def on_ready(self):
         msg = f'{self.user} has connected to Discord, using PY: {platform.python_version()}, DS: {discord.__version__}'
         self.logger.info(msg)
-        print(msg)
         if not self.initComplete:
             self.initModulesAndCommands()
             await self.spamModule.initHoneyPots()
@@ -160,7 +172,7 @@ class VoidSeeker(discord.Client):
                 return
             for user in message.mentions: # type: discord.abc.User
                 if user.mention == self.user.mention:
-                    await message.channel.trigger_typing()
+                    await message.channel.typing()
                     await message.channel.send("VoidSeeker Mk. 39 online")
                     return
 
@@ -179,8 +191,6 @@ class VoidSeeker(discord.Client):
             lst_trace = trace.split('\n')
             for line in lst_trace:
                 self.logger.critical(line)
-            if TEST_MODE.lower() == "yes":
-                print(trace)
 
 client = VoidSeeker(LOGGER)
-client.run(TOKEN)
+client.run(TOKEN, log_formatter=obj_stdFormatter, log_handler=obj_stdHandler, log_level=obj_stdHandler.level)

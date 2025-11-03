@@ -36,6 +36,7 @@ class StartSpamConfigView(AutoDeferView):
         await self.voidseeker.adminModule.persistServerSettings(self.userId, self.data)
         self.voidseeker.rebuildServerSettings(self.data)
         await self.voidseeker.spamModule.initHoneyPotChannel(self.voidseeker.spamModule.getSettings(self.data.serverId))
+        self.voidseeker.Session.commit()
 
         return True
 

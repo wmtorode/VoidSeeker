@@ -18,7 +18,7 @@ class HeuristicsConfigModal(AutoDeferModal):
             min_length=0,
             max_length=2000,
             required=False,
-            default=','.join(self.data.spamTerms),
+            default=',\n'.join(self.data.spamTerms),
             row=2,
             style=discord.TextStyle.paragraph
         )
@@ -29,7 +29,7 @@ class HeuristicsConfigModal(AutoDeferModal):
             min_length=0,
             max_length=2000,
             required=False,
-            default=','.join(self.data.spamUrls),
+            default=',\n'.join(self.data.spamUrls),
             row=2,
             style=discord.TextStyle.paragraph
         )

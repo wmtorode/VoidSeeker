@@ -8,8 +8,8 @@ from ..data import Command
 
 class StatusModule(BaseModule):
 
-    pingCmd = BaseModule.NativeCommandPrefix + "ping"
-    helpCmd = BaseModule.NativeCommandPrefix + "help"
+    pingCmd = BaseModule.CmdPrefix + "ping"
+    helpCmd = BaseModule.CmdPrefix + "help"
     getConfigCmd = BaseModule.CmdPrefix + "config"
 
     def registerCommands(self):
@@ -59,8 +59,8 @@ class StatusModule(BaseModule):
             embed.add_field(name="Honey Pot Channel Text", value=serverSettings.honeyPotChannelText, inline=False)
 
         embed.add_field(name="Anti-Spam Immune Roles", value=serverSettings.antiSpamImmuneList, inline=False)
-        embed.add_field(name="Ban Terms", value=serverSettings.spamTermList, inline=False)
-        embed.add_field(name="Ban Urls", value=serverSettings.spamUrlList, inline=False)
+        embed.add_field(name="Ban Terms", value=serverSettings.spamTermList, inline=True)
+        embed.add_field(name="Ban Urls", value=serverSettings.spamUrlList, inline=True)
 
         if serverSettings.antiSpamHeuristicsEnabled:
             embed.add_field(name="Heuristics Ban Text", value=serverSettings.heuristicsBanMessage, inline=False)
