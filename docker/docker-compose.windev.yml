@@ -1,5 +1,5 @@
 ######################################################################
-# Camelot Command Bot Development Compose for Docker on Windows
+# VoidSeeker Bot Development Compose for Docker on Windows
 ######################################################################
 
 version: '3.2'
@@ -9,14 +9,10 @@ services:
     restart: always
     container_name: VoidSeeker
 
-#   This external link is for the database container.
     external_links:
-      - roguebot-db:db
-    security_opt:
-      - apparmor:unconfined
-    cap_add:
-      - SYS_ADMIN
-      - DAC_READ_SEARCH
+      - voidseeker-db:db
+    depends_on:
+      - voidseeker-db
     volumes:
       - c:\voidseeker\log:/opt/voidseekerLog
       - c:\voidseeker\data:/opt/voidseekerStore
@@ -33,6 +29,25 @@ services:
       options:
         max-size: "25m"
         max-file: "3"
+
+  voidseeker-db:
+    image: postgres:16.2-alpine3.19
+    restart: always
+    security_opt:
+      - seccomp=unconfined
+    ports:
+      - 5433:5432
+    volumes:
+      - c:\voidseeker\dbdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: botPass
+      POSTGRES_DB: botDb
+      POSTGRES_USER: botUser
+      PGDATA: /var/lib/postgresql/data/pgdata
+#    you should remove the DB from the frontend network in production if the host is internet facing
+    networks:
+      backend:
+      frontend:
 
 networks:
   frontend:
