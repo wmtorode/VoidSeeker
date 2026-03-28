@@ -7,6 +7,7 @@ from ...data import ServerSettings
 from .honeypotconfigmodal import HoneypotConfigModal
 from .heurtisticsconfigmodal import HeuristicsConfigModal
 from .immunerolesmodal import ImmuneRolesConfigModal
+from .ocrconfigmodal import OcrConfigModal
 
 
 class StartSpamConfigView(AutoDeferView):
@@ -17,6 +18,7 @@ class StartSpamConfigView(AutoDeferView):
         self.honeyPotButton = NavButton(discord.ButtonStyle.blurple, "Configure Honey Pot Channel", 0, modal=HoneypotConfigModal)
         self.heuristicsButton = NavButton(discord.ButtonStyle.blurple, "Configure Anti-Spam Heuristics", 0, modal=HeuristicsConfigModal)
         self.immuneRolesButton = NavButton(discord.ButtonStyle.blurple, "Configure Role Immunity", 0, modal=ImmuneRolesConfigModal)
+        self.ocrButton = NavButton(discord.ButtonStyle.blurple, "Configure OCR Settings", 0, modal=OcrConfigModal)
 
 
         self.commitButton = NavButton(discord.ButtonStyle.green, "Commit Changes", 1,
@@ -29,6 +31,7 @@ class StartSpamConfigView(AutoDeferView):
         self.add_item(self.honeyPotButton)
         self.add_item(self.heuristicsButton)
         self.add_item(self.immuneRolesButton)
+        self.add_item(self.ocrButton)
         self.add_item(self.commitButton)
         self.add_item(self.doneButton)
 
