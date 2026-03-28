@@ -17,6 +17,7 @@ class BanAction(ModelBase):
     joinedAt = Column(DateTime)
     detectionMethod = Column(String(length=64), default="")
     banId = Column(Integer, default=0)
+    ocrResultId = Column(Integer, ForeignKey("ocrResults.id"))
 
     @property
     def pStat(self):

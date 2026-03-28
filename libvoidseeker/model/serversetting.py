@@ -18,4 +18,7 @@ class ServerSetting(ModelBase):
     updatedAt = Column(DateTime)
     banCount = Column(BigInteger, default=0)
     heuristicsBanText = Column(UnicodeText, default="")
+    ocrRules = Column(JSON, default=[])
+    ocrEnabled = Column(Boolean, default=False)
+    ocrImageCount = Column(BigInteger, default=0)
 

@@ -10,7 +10,7 @@ class TestModule(BaseModule):
 
     def registerCommands(self):
         return {
-            self.getUserMsgCountCmd: Command(self.getUserMsgCount, "Test command", self.ownerAuth),
+            self.getUserMsgCountCmd: Command(self.getUserMsgCount, "Test command", self.ownerAuth)
         }
 
     async def getUserMsgCount(self, message: discord.Message, serverSettings: ServerSettings):

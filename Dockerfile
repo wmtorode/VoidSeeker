@@ -24,7 +24,11 @@ RUN apt-get install -y \
     libxml2-dev \
     libxslt1-dev \
     tzdata\
-    libzbar0
+    libzbar0\
+    tesseract-ocr\
+    libtesseract-dev\
+    pkg-config
+
 
 # Create a folder to host the main project files
 RUN mkdir -p /opt/roguestudio/voidseekerbot

@@ -6,3 +6,5 @@ from .immuneroles import ImmuneRole
 from .authuser import AuthUser
 from .honeypotchannel import HoneyPotChannel
 from .serversetting import ServerSetting
+from .ocrresult import OcrResult
+from .ocrrequest import OcrRequest

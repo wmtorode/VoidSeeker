@@ -28,6 +28,10 @@ class ServerSettings:
         self._modRoleNames = []
         self.banCount = 0
 
+        self.ocrEnabled = False
+        self.ocrImagesBeforeProcessing = 2
+        self.ocrRules = []
+
     def initSettings(self, serverSettingDb: ServerSetting, honeyPotChannel: HoneyPotChannel, authUsers: list, antiSpamImmuneRoles: list, banTerms: list, roles: list):
         self.honeyPotChannelEnabled = serverSettingDb.honeyPotEnabled
         self.honeyPotChannelText = serverSettingDb.honeyPotText
@@ -47,6 +51,10 @@ class ServerSettings:
         self._roleNames.clear()
         self.modRoles.clear()
         self._modRoleNames.clear()
+        self.ocrEnabled = serverSettingDb.ocrEnabled
+        self.ocrImagesBeforeProcessing = serverSettingDb.ocrImageCount
+
+        # todo load ocr rules
 
         if honeyPotChannel:
             self.honeyPotChannelId = honeyPotChannel.channelId
