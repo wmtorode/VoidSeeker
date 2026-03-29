@@ -53,6 +53,10 @@ class ServerSettings:
         self._modRoleNames.clear()
         self.ocrEnabled = serverSettingDb.ocrEnabled
         self.ocrImagesBeforeProcessing = serverSettingDb.ocrImageCount
+        if self.ocrEnabled is None:
+            self.ocrEnabled = False
+        if self.ocrImagesBeforeProcessing is None:
+            self.ocrImagesBeforeProcessing = 999
 
         # todo load ocr rules
 

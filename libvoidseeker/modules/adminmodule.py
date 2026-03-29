@@ -124,6 +124,8 @@ class AdminModule(BaseModule):
         baseSettings.banOnPingAll = serverSettings.banOnPingAll
         baseSettings.updatedAt = datetime.datetime.now(datetime.UTC)
         baseSettings.heuristicsBanText = serverSettings.heuristicsBanMessage
+        baseSettings.ocrEnabled = serverSettings.ocrEnabled
+        baseSettings.ocrImageCount = serverSettings.ocrImagesBeforeProcessing
 
         self.Session.add(baseSettings)
 

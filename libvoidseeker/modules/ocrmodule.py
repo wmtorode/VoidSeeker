@@ -31,19 +31,30 @@ class OCRModule(BaseModule):
         else:
             await message.channel.send(embed=self.makeErrorEmbed("No image attached"))
 
-    async def processForOcr(self, message: discord.Message, serverSettings: ServerSettings):
+    async def processForOcr(self, message: discord.Message):
+        serverSettings = self.getSettings(message.guild.id)
         if serverSettings.ocrEnabled and len(message.attachments) >= serverSettings.ocrImagesBeforeProcessing:
             ocrData = OCRData()
+            imageCount = 0
             for attachment in message.attachments:
-                id = str(uuid.uuid4())
-                await attachment.save(f"{self.storeDir}/ocr/{id}")
-                ocrData.images.append(id)
-            self.startSqlEntry()
-            request = OcrRequest()
-            request.serverId = message.guild.id
-            request.userId = message.author.id
-            request.requestJson = ocrData.toJson()
-            self.Session.add(request)
-            self.Session.commit()
-            self.logger.info(f"OCR Request placed")
+                if self._isImage(attachment):
+                    imageCount += 1
+            if imageCount >= serverSettings.ocrImagesBeforeProcessing:
+                for attachment in message.attachments:
+                    if self._isImage(attachment):
+                        imageCount += 1
+                        id = str(uuid.uuid4())
+                        await attachment.save(f"{self.storeDir}/ocr/{id}")
+                        ocrData.images.append(id)
+                self.startSqlEntry()
+                request = OcrRequest()
+                request.serverId = message.guild.id
+                request.userId = message.author.id
+                request.requestJson = ocrData.toJson()
+                self.Session.add(request)
+                self.Session.commit()
+                self.logger.info(f"OCR Request placed")
 
+
+    def _isImage(self, attachment: discord.Attachment):
+        return attachment.content_type.startswith("image/")

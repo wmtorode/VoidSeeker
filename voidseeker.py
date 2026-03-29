@@ -4,6 +4,7 @@ import logging
 import logging.handlers
 import traceback
 import platform
+import subprocess
 
 import discord
 import discord.utils
@@ -86,6 +87,7 @@ class VoidSeeker(discord.Client):
         self.modModule = None
         self.spamModule = None
         self.legacyModule = None
+        self.ocrModule = None
         self.settings = BotSettings()
 
         self.modules = []
@@ -101,13 +103,15 @@ class VoidSeeker(discord.Client):
         self.modModule = ModModule(self.logger, self.settings, self.Session, self, STORE_DIR)
         self.spamModule = SpamModule(self.logger, self.settings, self.Session, self, STORE_DIR)
         self.legacyModule = LegacyModule(self.logger, self.settings, self.Session, self, STORE_DIR)
+        self.ocrModule = OCRModule(self.logger, self.settings, self.Session, self, STORE_DIR)
 
         self.modules = [
             self.statusModule,
             self.adminModule,
             self.modModule,
             self.spamModule,
-            self.legacyModule
+            self.legacyModule,
+            self.ocrModule
         ]
 
         if self.baseModule.isInTestMode:
@@ -170,6 +174,7 @@ class VoidSeeker(discord.Client):
                 return
             if await self.spamModule.checkIfSpambot(message):
                 return
+            await self.ocrModule.processForOcr(message)
             for user in message.mentions: # type: discord.abc.User
                 if user.mention == self.user.mention:
                     await message.channel.typing()
@@ -191,6 +196,14 @@ class VoidSeeker(discord.Client):
             lst_trace = trace.split('\n')
             for line in lst_trace:
                 self.logger.critical(line)
+
+
+    try:
+        subprocess.Popen('python3 /opt/roguestudio/voidseekerbot/ocrserver.py'.split())
+    except Exception as e:
+        print('OCR Server start exception:')
+        print(str(e))
+
 
 client = VoidSeeker(LOGGER)
 client.run(TOKEN, log_formatter=obj_stdFormatter, log_handler=obj_stdHandler, log_level=obj_stdHandler.level)

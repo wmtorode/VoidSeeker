@@ -54,6 +54,7 @@ class StatusModule(BaseModule):
         embed.add_field(name="Ban when pings everyone", value=str(serverSettings.banOnPingAll), inline=True)
         embed.add_field(name="Anti-Spam Heuristics Enabled", value=str(serverSettings.antiSpamHeuristicsEnabled),
                         inline=True)
+        embed.add_field(name="OCR Enabled", value=str(serverSettings.ocrEnabled), inline=True)
 
         if serverSettings.honeyPotChannelEnabled:
             embed.add_field(name="Honey Pot Channel Text", value=serverSettings.honeyPotChannelText, inline=False)
@@ -64,6 +65,11 @@ class StatusModule(BaseModule):
 
         if serverSettings.antiSpamHeuristicsEnabled:
             embed.add_field(name="Heuristics Ban Text", value=serverSettings.heuristicsBanMessage, inline=False)
+
+        if serverSettings.ocrEnabled:
+            embed.add_field(name="Min Attachments to Trigger OCR", value=str(serverSettings.ocrImagesBeforeProcessing),
+                            inline=False)
+
 
         embed.add_field(name="Admins", value=serverSettings.adminList, inline=True)
         embed.add_field(name="Moderators", value=serverSettings.modList, inline=True)

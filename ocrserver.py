@@ -43,7 +43,8 @@ if TEST_MODE.lower() == "yes":
 class OCRServer:
 
     def __init__(self):
-        self.sessionMaker = sessionmaker(bind=ENGINE)()
+        self.sessionMaker = sessionmaker()
+        self.sessionMaker.configure(bind=ENGINE)
         self.session = self.sessionMaker()
         self.logger = LOGGER
         self.logger.info("OCRServer initialized")
@@ -61,14 +62,18 @@ class OCRServer:
         data.fromJson(request.requestJson)
 
         for image in data.images:
-            self.logger.info("OCR Request: " + image)
-            imagePath = os.path.join(STORE_DIR, image)
-            if os.path.exists(imagePath):
-                image = PIL.Image.open(imagePath)
-                text = pytesseract.image_to_string(image)
-                data.results.append(text)
-            else:
-                self.logger.error("Image not found: " + imagePath)
+            try:
+                self.logger.info("OCR Request: " + image)
+                imagePath = os.path.join(STORE_DIR, image)
+                if os.path.exists(imagePath):
+                    image = PIL.Image.open(imagePath)
+                    text = pytesseract.image_to_string(image)
+                    data.results.append(text)
+                else:
+                    self.logger.error("Image not found: " + imagePath)
+                    data.results.append("")
+            except (TypeError, PIL.UnidentifiedImageError):
+                self.logger.warning(f"Unsupported image format for image: {image}")
                 data.results.append("")
         result = OcrResult()
         result.serverId = request.serverId
@@ -83,8 +88,8 @@ class OCRServer:
                 time.sleep(OCR_LOOP_DELAY)
                 self.startSqlTransaction()
 
-                ocrRequests = self.session.query(OcrRequest).filter(OcrRequest).all() # type: List[OcrRequest]
-                for ocrRequest in ocrRequests:
+                ocrRequests = self.session.query(OcrRequest).all()  # type: List[OcrRequest]
+                for ocrRequest in ocrRequests: # type: OcrRequest
                     self.processRequest(ocrRequest)
                 self.session.commit()
             except:
@@ -95,3 +100,5 @@ class OCRServer:
                     self.logger.critical(line)
 
 
+server = OCRServer()
+server.run()

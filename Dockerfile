@@ -1,5 +1,5 @@
 FROM python:3.12.12-bookworm
-MAINTAINER Jamie Wolf
+LABEL org.opencontainers.image.authors="Jamie Wolf"
 
 # work around TZ data prompting for interaction
 ENV TZ=America/Toronto
@@ -46,6 +46,7 @@ COPY libvoidseeker libvoidseeker
 COPY docker/startup.sh ./startup.sh
 COPY migrations migrations
 COPY voidseeker.py ./
+COPY ocrserver.py ./
 
 RUN chmod +x startup.sh
 
