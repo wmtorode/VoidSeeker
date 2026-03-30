@@ -1,5 +1,6 @@
 import discord
 
+from .ocrrule import OcrRule
 from ..model import *
 from .enums import TermType, UserRole
 
@@ -58,7 +59,12 @@ class ServerSettings:
         if self.ocrImagesBeforeProcessing is None:
             self.ocrImagesBeforeProcessing = 999
 
-        # todo load ocr rules
+        rules = serverSettingDb.ocrRules['ocrRules']
+        self.ocrRules.clear()
+        for rule in rules:
+            ocrRule = OcrRule()
+            ocrRule.fromJson(rule)
+            self.ocrRules.append(ocrRule)
 
         if honeyPotChannel:
             self.honeyPotChannelId = honeyPotChannel.channelId

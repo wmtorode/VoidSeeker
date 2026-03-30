@@ -6,4 +6,5 @@ alembic-migrate
 psycopg
 pillow==12.1.1
 pytesseract==0.3.13
+sqlalchemy-json==0.7.0
 

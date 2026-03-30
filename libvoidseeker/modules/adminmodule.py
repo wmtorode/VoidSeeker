@@ -118,6 +118,10 @@ class AdminModule(BaseModule):
             baseSettings = ServerSetting()
             baseSettings.serverId = serverSettings.serverId
 
+        rules = []
+        for rule in serverSettings.ocrRules:
+            rules.append(rule.ocrRule.toJson())
+
         baseSettings.honeyPotEnabled = serverSettings.honeyPotChannelEnabled
         baseSettings.honeyPotText = serverSettings.honeyPotChannelText
         baseSettings.heuristicsEnabled = serverSettings.antiSpamHeuristicsEnabled
@@ -126,6 +130,9 @@ class AdminModule(BaseModule):
         baseSettings.heuristicsBanText = serverSettings.heuristicsBanMessage
         baseSettings.ocrEnabled = serverSettings.ocrEnabled
         baseSettings.ocrImageCount = serverSettings.ocrImagesBeforeProcessing
+        baseSettings.ocrRules = {
+            "ocrRules": rules,
+        }
 
         self.Session.add(baseSettings)
 
