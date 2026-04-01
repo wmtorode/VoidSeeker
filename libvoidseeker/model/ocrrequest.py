@@ -13,3 +13,4 @@ class OcrRequest(ModelBase):
     userId = Column(BigInteger, default=0)
     requestJson = Column(JSON, default={})
     addedAt = Column(DateTime, default=datetime.datetime.now(datetime.UTC))
+    channelId = Column(BigInteger, default=0)

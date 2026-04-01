@@ -2,6 +2,8 @@ from typing import List
 
 import discord
 import time
+import os
+import shutil
 
 from io import BytesIO
 
@@ -9,10 +11,10 @@ import uuid
 import PIL
 import pytesseract
 
+from libvoidseeker.data.ocrrule import OcrRule
 from .basemodule import BaseModule
 from .. import ServerSettings, OCRData, OcrRequest, OcrResult
-from ..data import Command
-
+from ..data import Command, DetectionType
 
 class OCRModule(BaseModule):
 
@@ -53,12 +55,50 @@ class OCRModule(BaseModule):
                 request.serverId = message.guild.id
                 request.userId = message.author.id
                 request.requestJson = ocrData.toJson()
+                request.channelId = message.channel.id
                 self.Session.add(request)
                 self.Session.commit()
                 self.logger.info(f"OCR Request placed")
 
-    def processOcrResults(self, ocrResults: List[OcrResult]):
-        pass
+    async def processOcrResults(self, ocrResults: List[OcrResult]):
+        for ocrResult in ocrResults:
+            await self._processResult(ocrResult)
+
+
+    async def _processResult(self, ocrResult: OcrResult):
+        serverSettings = self.getSettings(ocrResult.serverId)
+        guild = self.voidseeker.get_guild(ocrResult.serverId)
+        user = guild.get_member(ocrResult.userId)
+        channel = guild.get_channel(ocrResult.channelId)
+        triggeredRules = []
+        resultData = OCRData()
+        resultData.fromJson(ocrResult.ocrResultJson)
+        for result in resultData.results:
+            for rule in serverSettings.ocrRules: # type: OcrRule
+                if rule.check(result):
+                    triggeredRules.append(rule.ruleName)
+                    self.logger.info(f"OCR Rule triggered: {rule.ruleName}")
+        if len(triggeredRules) > 0:
+            self.logger.info("OCR Rules triggered, OCR ban in progress")
+            ocrResult.historic = True
+            ocrResult.rulesBreached = ';'.join(triggeredRules)
+            self.startSqlEntry()
+            self.Session.add(ocrResult)
+            self.Session.commit()
+            await self.banUser(serverSettings, user, guild, channel, DetectionType.Ocr, ocrResult.id)
+        else:
+            # dont keep detections that had nothing
+            for image in ocrResult.images:
+                try:
+                    os.remove(f"{self.storeDir}/ocr/{image}")
+                except:
+                    self.logger.warning(f"failed to remove OCR Image: {image}")
+            self.startSqlEntry()
+            self.Session.delete(ocrResult)
+            self.Session.commit()
+
+
+
 
     def _isImage(self, attachment: discord.Attachment):
         return attachment.content_type.startswith("image/")

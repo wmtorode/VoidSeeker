@@ -68,6 +68,11 @@ class SpamModule(BaseModule):
         return True
 
     async def banSpamBot(self, serverSettings: ServerSettings, message: discord.Message, detectionMethod):
+        await self.banMember(serverSettings, message.author, message.guild, message.channel, detectionMethod, None)
+
+
+    async def banMember(self, serverSettings: ServerSettings, user: discord.Member, guild: discord.Guild,
+                      channel: discord.TextChannel, detectionMethod, ocrResultId=None):
         self.startSqlEntry()
         serverSettingDb = self.Session.query(ServerSetting).filter(ServerSetting.serverId == serverSettings.serverId).first() # type: ServerSetting
         serverSettingDb.banCount += 1
@@ -76,31 +81,32 @@ class SpamModule(BaseModule):
 
         banAction = BanAction()
         banAction.serverId = serverSettings.serverId
-        banAction.userId = message.author.id
-        banAction.userName = message.author.display_name
-        banAction.createdAt = message.author.created_at
-        banAction.joinedAt = message.author.joined_at
+        banAction.userId = user.id
+        banAction.userName = user.display_name
+        banAction.createdAt = user.created_at
+        banAction.joinedAt = user.joined_at
         banAction.bannedAt = datetime.datetime.now(datetime.UTC)
         banAction.detectionMethod = detectionMethod
         banAction.banId = serverSettings.banCount
+        if ocrResultId:
+            banAction.ocrResultId = ocrResultId
         self.Session.add(banAction)
 
         try:
-            await message.guild.ban(message.author, reason="likely Spambot detected", delete_message_days=1)
+            await guild.ban(user, reason="likely Spambot detected", delete_message_days=1)
         except:
             self.logger.error("Unable to ban spambot!")
             trace = traceback.format_exc()
             for line in trace.split('\n'):
                 self.logger.error(line)
             self.Session.rollback()
-            role = message.guild.get_role(serverSettings.antiSpamImmuneRoles[0])
-            await message.channel.send(f"{role.mention} unable to ban spam bot, pls help!")
+            role = guild.get_role(serverSettings.antiSpamImmuneRoles[0])
+            await channel.send(f"{role.mention} unable to ban spam bot, pls help!")
             return
 
-        guild = message.guild
         self.Session.commit()
         await self._updateHoneyPotMessage(guild, serverSettings, honeyPotChannel)
-        self.logger.info(f"Banned {message.author.name} for as a spambot!")
+        self.logger.info(f"Banned {user.name} for as a spambot!")
 
     async def _makeHoneyPotMessage(self, guild: discord.Guild, serverSettings: ServerSettings, hpChannel: HoneyPotChannel):
         channel = guild.get_channel(hpChannel.channelId)

@@ -68,7 +68,7 @@ class OCRServer:
                 if os.path.exists(imagePath):
                     image = PIL.Image.open(imagePath)
                     text = pytesseract.image_to_string(image)
-                    data.results.append(text)
+                    data.results.append(text.lower())
                 else:
                     self.logger.error("Image not found: " + imagePath)
                     data.results.append("")
@@ -79,6 +79,7 @@ class OCRServer:
         result.serverId = request.serverId
         result.userId = request.userId
         result.ocrResultJson = data.toJson()
+        result.channelId = request.channelId
         self.session.add(result)
         self.session.delete(request)
 

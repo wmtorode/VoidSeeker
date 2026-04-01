@@ -15,3 +15,4 @@ class OcrResult(ModelBase):
     ocrResultJson = Column(JSON, default={})
     historic = Column(Boolean, default=False)
     rulesBreached = Column(Text, default="")
+    channelId = Column(BigInteger, default=0)
