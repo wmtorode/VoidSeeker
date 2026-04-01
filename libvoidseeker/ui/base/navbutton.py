@@ -15,7 +15,6 @@ class NavButton(discord.ui.Button):
         self.modal = modal
         self.afterModalCallback = afterModalCallback
 
-
     def callBackBuilder(self):
         return self.callbackView(self.view.voidseeker, self.view.userId, self.view.data)
 

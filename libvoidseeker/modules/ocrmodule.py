@@ -1,3 +1,5 @@
+from typing import List
+
 import discord
 import time
 
@@ -8,7 +10,7 @@ import PIL
 import pytesseract
 
 from .basemodule import BaseModule
-from .. import ServerSettings, OCRData, OcrRequest
+from .. import ServerSettings, OCRData, OcrRequest, OcrResult
 from ..data import Command
 
 
@@ -55,6 +57,8 @@ class OCRModule(BaseModule):
                 self.Session.commit()
                 self.logger.info(f"OCR Request placed")
 
+    def processOcrResults(self, ocrResults: List[OcrResult]):
+        pass
 
     def _isImage(self, attachment: discord.Attachment):
         return attachment.content_type.startswith("image/")

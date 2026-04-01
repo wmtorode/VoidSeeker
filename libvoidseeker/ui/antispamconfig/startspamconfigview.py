@@ -18,6 +18,9 @@ class StartSpamConfigView(AutoDeferView):
         self.honeyPotButton = NavButton(discord.ButtonStyle.blurple, "Configure Honey Pot Channel", 0, modal=HoneypotConfigModal)
         self.heuristicsButton = NavButton(discord.ButtonStyle.blurple, "Configure Anti-Spam Heuristics", 0, modal=HeuristicsConfigModal)
         self.immuneRolesButton = NavButton(discord.ButtonStyle.blurple, "Configure Role Immunity", 0, modal=ImmuneRolesConfigModal)
+
+        # ToDo find a nice way of making OCR Rules through the discord UI
+        # making the rules uploadable as a file works, but isn't super nice for users who aren't JSON savvy
         self.ocrButton = NavButton(discord.ButtonStyle.blurple, "Configure OCR Settings", 0, modal=OcrConfigModal)
 
 

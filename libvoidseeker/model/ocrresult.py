@@ -14,3 +14,4 @@ class OcrResult(ModelBase):
     addedAt = Column(DateTime, default=datetime.datetime.now(datetime.UTC))
     ocrResultJson = Column(JSON, default={})
     historic = Column(Boolean, default=False)
+    rulesBreached = Column(Text, default="")

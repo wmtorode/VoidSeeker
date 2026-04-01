@@ -120,7 +120,7 @@ class AdminModule(BaseModule):
 
         rules = []
         for rule in serverSettings.ocrRules:
-            rules.append(rule.ocrRule.toJson())
+            rules.append(rule.toJson())
 
         baseSettings.honeyPotEnabled = serverSettings.honeyPotChannelEnabled
         baseSettings.honeyPotText = serverSettings.honeyPotChannelText

@@ -1,0 +1,43 @@
+{
+  "ocrRules":[
+    {
+      "ruleName": "Mr Beast/Elon Crypto Scam",
+      "groupsMatchesNeeded": 0,
+      "groups": [
+        {
+          "groupName": "Actor",
+          "anyOf": [
+            "mrbeast",
+            "elonmusk",
+            "mr beast",
+            "elon musk",
+            "mr.beast",
+            "elon.musk",
+            "elon"
+          ],
+          "allOf": [],
+          "noneOf": []
+        },
+        {
+          "groupName": "Crypto",
+          "anyOf": [
+            "crypto",
+            "cryptocurrency",
+            "crypto currency"
+          ],
+          "allOf": [],
+          "noneOf": []
+        },
+        {
+          "groupName": "Giveaway",
+          "anyOf": [
+            "giveaway",
+            "giving"
+          ],
+          "allOf": [],
+          "noneOf": []
+        }
+      ]
+    }
+  ]
+}

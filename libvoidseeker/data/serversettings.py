@@ -59,7 +59,10 @@ class ServerSettings:
         if self.ocrImagesBeforeProcessing is None:
             self.ocrImagesBeforeProcessing = 999
 
-        rules = serverSettingDb.ocrRules['ocrRules']
+        if not serverSettingDb.ocrRules:
+            rules = []
+        else:
+            rules = serverSettingDb.ocrRules['ocrRules']
         self.ocrRules.clear()
         for rule in rules:
             ocrRule = OcrRule()
@@ -103,6 +106,14 @@ class ServerSettings:
             stMsg += f'- {item}\n'
         return stMsg
 
+    def loadRules(self, dctRules: dict):
+        self.ocrRules.clear()
+        for rule in dctRules['ocrRules']:
+            ocrRule = OcrRule()
+            ocrRule.fromJson(rule)
+            self.ocrRules.append(ocrRule)
+        return len(self.ocrRules) > 0
+
     @property
     def adminList(self):
         return self._renderList(self._adminNames)
@@ -123,6 +134,14 @@ class ServerSettings:
     @property
     def spamUrlList(self):
         return self._renderList(self.spamUrls)
+
+    @property
+    def ocrRulesList(self):
+        ruleNames = []
+        for rule in self.ocrRules:
+            ruleNames.append(rule.ruleName)
+        return self._renderList(ruleNames)
+
 
 
 

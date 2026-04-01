@@ -3,6 +3,7 @@
 class OcrGroup:
 
     def __init__(self):
+        self.groupName = ""
         self.allOf = []
         self.anyOf = []
         self.noneOf = []
@@ -11,13 +12,15 @@ class OcrGroup:
         return {
             'allOf': self.allOf,
             'anyOf': self.anyOf,
-            'noneOf': self.noneOf
+            'noneOf': self.noneOf,
+            'groupName': self.groupName
         }
 
     def fromJson(self, json):
         self.allOf = json['allOf']
         self.anyOf = json['anyOf']
         self.noneOf = json['noneOf']
+        self.groupName = json['groupName']
 
     def _checkAllOf(self, text):
         result = True
