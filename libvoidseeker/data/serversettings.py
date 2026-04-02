@@ -1,5 +1,6 @@
 import discord
 
+from .ocrrule import OcrRule
 from ..model import *
 from .enums import TermType, UserRole
 
@@ -28,6 +29,10 @@ class ServerSettings:
         self._modRoleNames = []
         self.banCount = 0
 
+        self.ocrEnabled = False
+        self.ocrImagesBeforeProcessing = 2
+        self.ocrRules = []
+
     def initSettings(self, serverSettingDb: ServerSetting, honeyPotChannel: HoneyPotChannel, authUsers: list, antiSpamImmuneRoles: list, banTerms: list, roles: list):
         self.honeyPotChannelEnabled = serverSettingDb.honeyPotEnabled
         self.honeyPotChannelText = serverSettingDb.honeyPotText
@@ -47,6 +52,22 @@ class ServerSettings:
         self._roleNames.clear()
         self.modRoles.clear()
         self._modRoleNames.clear()
+        self.ocrEnabled = serverSettingDb.ocrEnabled
+        self.ocrImagesBeforeProcessing = serverSettingDb.ocrImageCount
+        if self.ocrEnabled is None:
+            self.ocrEnabled = False
+        if self.ocrImagesBeforeProcessing is None:
+            self.ocrImagesBeforeProcessing = 999
+
+        if not serverSettingDb.ocrRules:
+            rules = []
+        else:
+            rules = serverSettingDb.ocrRules['ocrRules']
+        self.ocrRules.clear()
+        for rule in rules:
+            ocrRule = OcrRule()
+            ocrRule.fromJson(rule)
+            self.ocrRules.append(ocrRule)
 
         if honeyPotChannel:
             self.honeyPotChannelId = honeyPotChannel.channelId
@@ -85,6 +106,23 @@ class ServerSettings:
             stMsg += f'- {item}\n'
         return stMsg
 
+    def loadRules(self, dctRules: dict):
+        self.ocrRules.clear()
+        for rule in dctRules['ocrRules']:
+            ocrRule = OcrRule()
+            ocrRule.fromJson(rule)
+            self.ocrRules.append(ocrRule)
+        return len(self.ocrRules) > 0
+
+    @property
+    def ocrJson(self) -> dict:
+        ret = {
+            'ocrRules': []
+        }
+        for rule in self.ocrRules:
+            ret['ocrRules'].append(rule.toJson())
+        return ret
+
     @property
     def adminList(self):
         return self._renderList(self._adminNames)
@@ -105,6 +143,14 @@ class ServerSettings:
     @property
     def spamUrlList(self):
         return self._renderList(self.spamUrls)
+
+    @property
+    def ocrRulesList(self):
+        ruleNames = []
+        for rule in self.ocrRules:
+            ruleNames.append(rule.ruleName)
+        return self._renderList(ruleNames)
+
 
 
 

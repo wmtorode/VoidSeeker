@@ -21,6 +21,11 @@ class NumberSelect(discord.ui.Select):
 
         super().__init__(placeholder=placeholderText, min_values=1, max_values=1, options=options, row=row)
 
+    def updateSelectedValue(self):
+        value = int(self.values[0])
+        print(f"Selected Value: {value}")
+        self.selectedValue = value
+
     async def callbackInternal(self):
         self.selectedValue = int(self.values[0])
         if self.viewCallback:

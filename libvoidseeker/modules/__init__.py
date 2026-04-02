@@ -5,3 +5,4 @@ from .modmodule import ModModule
 from .spammodule import SpamModule
 from .testmodule import TestModule
 from .legacymodule import LegacyModule
+from .ocrmodule import OCRModule

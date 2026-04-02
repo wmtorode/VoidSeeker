@@ -1,5 +1,6 @@
 from .base import ModelBase
 from sqlalchemy import Column, String, Integer, Boolean, Text, BigInteger, ForeignKey, Float, JSON, DateTime, Unicode, UnicodeText
+from sqlalchemy_json import NestedMutableJson
 import datetime
 
 
@@ -18,4 +19,7 @@ class ServerSetting(ModelBase):
     updatedAt = Column(DateTime)
     banCount = Column(BigInteger, default=0)
     heuristicsBanText = Column(UnicodeText, default="")
+    ocrRules = Column(NestedMutableJson, default={})
+    ocrEnabled = Column(Boolean, default=False)
+    ocrImageCount = Column(BigInteger, default=0)
 

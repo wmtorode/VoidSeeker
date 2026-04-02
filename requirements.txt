@@ -1,6 +1,10 @@
-discord.py==2.6.4
+discord.py==2.7.1
 SQLAlchemy==2.0.44
 alembic
 click
 alembic-migrate
 psycopg
+pillow==12.1.1
+pytesseract==0.3.13
+sqlalchemy-json==0.7.0
+

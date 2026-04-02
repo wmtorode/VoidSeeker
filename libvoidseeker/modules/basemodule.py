@@ -40,6 +40,11 @@ class BaseModule:
     def user(self):
         return self.voidseeker.user
 
+    async def banUser(self, serverSettings: ServerSettings, user: discord.Member, guild: discord.Guild,
+                      channel: discord.TextChannel, detectionMethod, ocrResultId=None):
+        await self.voidseeker.spamModule.banMember(serverSettings, user, guild, channel, detectionMethod, ocrResultId)
+
+
     def registerCommands(self):
         return {}
 

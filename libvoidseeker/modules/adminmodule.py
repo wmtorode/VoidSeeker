@@ -1,5 +1,6 @@
 import datetime
 import sys
+import json
 
 import discord
 
@@ -25,6 +26,7 @@ class AdminModule(BaseModule):
     removeModRoleCmd = BaseModule.CmdPrefix + "rmodrole"
 
     startAntiSpamConfigCmd = BaseModule.CmdPrefix + "configure"
+    getOcrRulesCmd = BaseModule.CmdPrefix + "ocrrules"
 
     restartBotCmd = BaseModule.CmdPrefix + "selfdestruct"
 
@@ -47,7 +49,8 @@ class AdminModule(BaseModule):
             self.removeModeratorCmd: Command(self.removeMod, "Removes a moderator from the server", self.adminAuth),
             self.addModRoleCmd: Command(self.addModRole, "Adds an entire role as a moderator", self.adminAuth),
             self.removeModRoleCmd: Command(self.removeModRole, "Removes an entire role as a moderator", self.adminAuth),
-            self.startAntiSpamConfigCmd: Command(self.startAntiSpamConfig, "Starts the Anti-Spambot Configuration Wizard", self.adminAuth)
+            self.startAntiSpamConfigCmd: Command(self.startAntiSpamConfig, "Starts the Anti-Spambot Configuration Wizard", self.adminAuth),
+            self.getOcrRulesCmd: Command(self.getOcrRules, "Gets the current OCR rules for this server", self.adminAuth)
         }
 
     async def _promoteUserToRole(self, message: discord.Message, serverSettings: ServerSettings, role, isRole=False):
@@ -124,6 +127,9 @@ class AdminModule(BaseModule):
         baseSettings.banOnPingAll = serverSettings.banOnPingAll
         baseSettings.updatedAt = datetime.datetime.now(datetime.UTC)
         baseSettings.heuristicsBanText = serverSettings.heuristicsBanMessage
+        baseSettings.ocrEnabled = serverSettings.ocrEnabled
+        baseSettings.ocrImageCount = serverSettings.ocrImagesBeforeProcessing
+        baseSettings.ocrRules = serverSettings.ocrJson
 
         self.Session.add(baseSettings)
 
@@ -196,3 +202,10 @@ class AdminModule(BaseModule):
         await message.channel.send(embed=self.makeInformationalEmbed("self-destruct sequence activated!"))
         await self.voidseeker.close()
         sys.exit(0)
+
+    async def getOcrRules(self, message: discord.Message, serverSettings: ServerSettings):
+        if not serverSettings.ocrEnabled:
+            await message.channel.send(embed=self.makeErrorEmbed("OCR is not enabled on this server"))
+            return
+        rulesJson = json.dumps(serverSettings.ocrJson, indent=4).encode("utf-8")
+        await self.sendFile("ocrRules.json", message.channel, rulesJson)

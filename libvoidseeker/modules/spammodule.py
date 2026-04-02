@@ -53,21 +53,38 @@ class SpamModule(BaseModule):
         return False
 
     async def checkRoleAndBans(self, message: discord.Message, serverSettings: ServerSettings, msgOnBan, detectionMethod):
-        for role in message.author.roles:
-            if role.id in serverSettings.antiSpamImmuneRoles:
-                self.logger.info(f"User is immune to spambot rules for having role {role.name}")
-                await message.delete(delay=3)
-                return False
-        if message.author.id in serverSettings.serverAdmins or message.author.id in serverSettings.serverModerators or message.author.id in self.voidseeker.ownerIds:
-            self.logger.info("User is immune as they are an admin, mod or owner on this server!")
+        user = message.author
+        if not await self.isUserBannable(user, serverSettings):
             await message.delete(delay=3)
             return False
         if msgOnBan:
             await message.reply(embed=self.makeInformationalEmbed(serverSettings.heuristicsBanMessage))
-        await self.banSpamBot(serverSettings, message, detectionMethod)
+        await self._banMember(serverSettings, message.author, message.guild, message.channel, detectionMethod, None)
         return True
 
-    async def banSpamBot(self, serverSettings: ServerSettings, message: discord.Message, detectionMethod):
+    async def banMember(self, serverSettings: ServerSettings, user: discord.Member, guild: discord.Guild,
+                        channel: discord.TextChannel, detectionMethod, ocrResultId=None):
+        if not await self.isUserBannable(user, serverSettings):
+            return
+        try:
+            banned = await self._banMember(serverSettings, user, guild, channel, detectionMethod, ocrResultId)
+            if banned:
+                await channel.send(embed=self.makeInformationalEmbed(f"Banned {user.mention} for spambot detection!"))
+        except:
+            pass
+
+    async def isUserBannable(self, user: discord.Member, serverSettings: ServerSettings):
+        for role in user.roles:
+            if role.id in serverSettings.antiSpamImmuneRoles:
+                self.logger.info(f"User is immune to spambot rules for having role {role.name}")
+                return False
+        if user.id in serverSettings.serverAdmins or user.id in serverSettings.serverModerators or user.id in self.voidseeker.ownerIds:
+            self.logger.info("User is immune as they are an admin, mod or owner on this server!")
+            return False
+        return True
+
+    async def _banMember(self, serverSettings: ServerSettings, user: discord.Member, guild: discord.Guild,
+                      channel: discord.TextChannel, detectionMethod, ocrResultId=None):
         self.startSqlEntry()
         serverSettingDb = self.Session.query(ServerSetting).filter(ServerSetting.serverId == serverSettings.serverId).first() # type: ServerSetting
         serverSettingDb.banCount += 1
@@ -76,31 +93,33 @@ class SpamModule(BaseModule):
 
         banAction = BanAction()
         banAction.serverId = serverSettings.serverId
-        banAction.userId = message.author.id
-        banAction.userName = message.author.display_name
-        banAction.createdAt = message.author.created_at
-        banAction.joinedAt = message.author.joined_at
+        banAction.userId = user.id
+        banAction.userName = user.display_name
+        banAction.createdAt = user.created_at
+        banAction.joinedAt = user.joined_at
         banAction.bannedAt = datetime.datetime.now(datetime.UTC)
         banAction.detectionMethod = detectionMethod
         banAction.banId = serverSettings.banCount
+        if ocrResultId:
+            banAction.ocrResultId = ocrResultId
         self.Session.add(banAction)
 
         try:
-            await message.guild.ban(message.author, reason="likely Spambot detected", delete_message_days=1)
+            await guild.ban(user, reason="likely Spambot detected", delete_message_days=1)
         except:
             self.logger.error("Unable to ban spambot!")
             trace = traceback.format_exc()
             for line in trace.split('\n'):
                 self.logger.error(line)
             self.Session.rollback()
-            role = message.guild.get_role(serverSettings.antiSpamImmuneRoles[0])
-            await message.channel.send(f"{role.mention} unable to ban spam bot, pls help!")
-            return
+            role = guild.get_role(serverSettings.antiSpamImmuneRoles[0])
+            await channel.send(f"{role.mention} unable to ban spam bot, pls help!")
+            return False
 
-        guild = message.guild
         self.Session.commit()
         await self._updateHoneyPotMessage(guild, serverSettings, honeyPotChannel)
-        self.logger.info(f"Banned {message.author.name} for as a spambot!")
+        self.logger.info(f"Banned {user.name} for as a spambot!")
+        return True
 
     async def _makeHoneyPotMessage(self, guild: discord.Guild, serverSettings: ServerSettings, hpChannel: HoneyPotChannel):
         channel = guild.get_channel(hpChannel.channelId)
