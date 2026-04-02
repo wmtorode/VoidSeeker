@@ -115,6 +115,15 @@ class ServerSettings:
         return len(self.ocrRules) > 0
 
     @property
+    def ocrJson(self) -> dict:
+        ret = {
+            'ocrRules': []
+        }
+        for rule in self.ocrRules:
+            ret['ocrRules'].append(rule.toJson())
+        return ret
+
+    @property
     def adminList(self):
         return self._renderList(self._adminNames)
 

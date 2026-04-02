@@ -16,3 +16,15 @@ class OcrResult(ModelBase):
     historic = Column(Boolean, default=False)
     rulesBreached = Column(Text, default="")
     channelId = Column(BigInteger, default=0)
+
+    def _renderList(self, prop):
+        if len(prop) == 1:
+            return prop[0]
+        stMsg = ''
+        for item in prop:
+            stMsg += f'- {item}\n'
+        return stMsg
+
+    @property
+    def rulesDetections(self):
+        return self._renderList(self.rulesBreached.split(';'))

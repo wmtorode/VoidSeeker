@@ -8,6 +8,7 @@ import subprocess
 
 import discord
 import discord.utils
+from discord.ext import tasks
 import asyncio
 
 from sqlalchemy.orm import sessionmaker
@@ -63,6 +64,8 @@ LOGGER.addHandler(obj_stdHandler)
 
 TOKEN = os.getenv("DISCORD_BOT_SECRET")
 OWNERS = getIdList(os.getenv("DISCORD_OWNING_USER_ID"))
+
+RUN_OCRLOOP = (os.getenv("SKIP_OCRLOOP", default="No") != "yes")
 
 
 class VoidSeeker(discord.Client):
@@ -123,6 +126,9 @@ class VoidSeeker(discord.Client):
             commands = module.registerCommands()
             self.CommandMap.update(commands)
 
+        if RUN_OCRLOOP:
+            self.handleProcessedOcrResults.start()
+
         self.initComplete = True
 
     async def on_ready(self):
@@ -163,6 +169,14 @@ class VoidSeeker(discord.Client):
         roles = self.get_guild(baseSettings.serverId).roles
 
         serverSettings.initSettings(baseSettings, honeyPotChannel, authUsers, antiSpamImmuneRoles, banTerms, roles)
+
+    @tasks.loop(seconds=5)
+    async def handleProcessedOcrResults(self):
+        await self.ocrModule.processOcrResults()
+
+    @handleProcessedOcrResults.before_loop
+    async def beforeOcrHandle(self):
+        await self.wait_until_ready()
 
     async def on_message(self, message:discord.Message):
         if not self.initComplete:

@@ -68,9 +68,9 @@ class StatusModule(BaseModule):
 
         if serverSettings.ocrEnabled:
             embed.add_field(name="Min Attachments to Trigger OCR", value=str(serverSettings.ocrImagesBeforeProcessing),
-                            inline=False)
+                            inline=True)
 
-            embed.add_field(name="OCR Rules", value=serverSettings.ocrRulesList, inline=True)
+            embed.add_field(name="OCR Rules", value=serverSettings.ocrRulesList, inline=False)
 
 
         embed.add_field(name="Admins", value=serverSettings.adminList, inline=True)

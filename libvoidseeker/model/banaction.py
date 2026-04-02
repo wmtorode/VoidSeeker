@@ -21,5 +21,5 @@ class BanAction(ModelBase):
 
     @property
     def pStat(self):
-        return f'{self.banId:<8} {self.userName:<34} {self.bannedAt.isoformat(sep=" ", timespec="minutes"):>18}\n'
+        return f'{self.banId:<8}  {self.userName:<34} {self.detectionMethod:<18}  {self.bannedAt.isoformat(sep=" ", timespec="minutes"):>18}\n'
 

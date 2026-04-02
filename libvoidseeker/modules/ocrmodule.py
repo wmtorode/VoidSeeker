@@ -47,9 +47,10 @@ class OCRModule(BaseModule):
                 for attachment in message.attachments:
                     if self._isImage(attachment):
                         imageCount += 1
+                        extension = attachment.filename.split('.')[-1]
                         id = str(uuid.uuid4())
-                        await attachment.save(f"{self.storeDir}/ocr/{id}")
-                        ocrData.images.append(id)
+                        await attachment.save(f"{self.storeDir}/ocr/{id}.{extension}")
+                        ocrData.images.append(f'{id}.{extension}')
                 self.startSqlEntry()
                 request = OcrRequest()
                 request.serverId = message.guild.id
@@ -60,7 +61,10 @@ class OCRModule(BaseModule):
                 self.Session.commit()
                 self.logger.info(f"OCR Request placed")
 
-    async def processOcrResults(self, ocrResults: List[OcrResult]):
+    async def processOcrResults(self):
+
+        self.startSqlEntry()
+        ocrResults = self.Session.query(OcrResult).filter(OcrResult.historic == False).all()
         for ocrResult in ocrResults:
             await self._processResult(ocrResult)
 
@@ -88,7 +92,7 @@ class OCRModule(BaseModule):
             await self.banUser(serverSettings, user, guild, channel, DetectionType.Ocr, ocrResult.id)
         else:
             # dont keep detections that had nothing
-            for image in ocrResult.images:
+            for image in resultData.images:
                 try:
                     os.remove(f"{self.storeDir}/ocr/{image}")
                 except:
