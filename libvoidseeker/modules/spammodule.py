@@ -20,7 +20,8 @@ class SpamModule(BaseModule):
                 return await self.checkRoleAndBans(message, serverSettings, True, DetectionType.Heuristic)
         if serverSettings.honeyPotChannelEnabled:
             if message.channel.id == serverSettings.honeyPotChannelId:
-                self.logger.info("Detected new potential spambot!")
+                self.logger.info(f"Detected new potential spambot: {message.author.name} ({message.author.id})")
+                self.logger.info(f"msg: {message.content} attachments: {len(message.attachments)}")
                 return await self.checkRoleAndBans(message, serverSettings, False, DetectionType.HoneyPot)
         return False
 
