@@ -92,6 +92,7 @@ class VoidSeeker(discord.Client):
         self.legacyModule = None
         self.ocrModule = None
         self.settings = BotSettings()
+        self.ocrReady = False
 
         self.modules = []
 
@@ -176,7 +177,9 @@ class VoidSeeker(discord.Client):
 
     @handleProcessedOcrResults.before_loop
     async def beforeOcrHandle(self):
-        await self.wait_until_ready()
+        if not self.ocrReady:
+            await self.wait_until_ready()
+            self.ocrReady = True
 
     async def on_message(self, message:discord.Message):
         if not self.initComplete:

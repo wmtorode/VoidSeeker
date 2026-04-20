@@ -105,4 +105,6 @@ class OCRModule(BaseModule):
 
 
     def _isImage(self, attachment: discord.Attachment):
+        if attachment.content_type is None:
+            return False
         return attachment.content_type.startswith("image/")
