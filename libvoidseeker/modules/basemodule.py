@@ -23,6 +23,8 @@ class BaseModule:
         CollidingPrefix = "vs$"
         NativeCommandPrefix = "vs&"
 
+    GifStoreDir = "gifs"
+
     def __init__(self, logger: logging.Logger, settings: BotSettings, dbSession, voidseeker: discord.Client, storeDir):
         self.logger = logger
         self.settings = settings
@@ -43,6 +45,10 @@ class BaseModule:
     async def banUser(self, serverSettings: ServerSettings, user: discord.Member, guild: discord.Guild,
                       channel: discord.TextChannel, detectionMethod, ocrResultId=None):
         await self.voidseeker.spamModule.banMember(serverSettings, user, guild, channel, detectionMethod, ocrResultId)
+
+    @property
+    def gifDir(self):
+        return os.path.join(self.storeDir, self.GifStoreDir)
 
 
     def registerCommands(self):

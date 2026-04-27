@@ -19,12 +19,32 @@ from ..data import Command, DetectionType
 class OCRModule(BaseModule):
 
     ocrScanImageCmd = BaseModule.CmdPrefix + 'ocr'
+    ocrGifFrameCmd = BaseModule.CmdPrefix + 'gifFrame'
 
     def registerCommands(self):
         return {
-            self.ocrScanImageCmd: Command(self.ocrScanImage, "Scan an Image with OCR and see the results", self.ownerAuth)
-
+            self.ocrScanImageCmd: Command(self.ocrScanImage, "Scan an Image with OCR and see the results", self.ownerAuth),
+            self.ocrGifFrameCmd: Command(self.saveGifFrames, "Save the frames of a GIF to the bot's store", self.ownerAuth)
         }
+
+    async def saveGifFrames(self, message: discord.Message, serverSettings: ServerSettings):
+        if len(message.attachments) >= 1:
+            isGif = self._isGif(message.attachments[0])
+            bio = BytesIO(await message.attachments[0].read())
+            img = PIL.Image.open(bio)
+            gifDir = self.gifDir
+            os.makedirs(gifDir, exist_ok=True)
+            if isGif:
+                frameCount = 1
+                for frame in PIL.ImageSequence.Iterator(img):
+                    frame.save(f"{gifDir}/frame_{frameCount}.png")
+                    frameCount += 1
+                await message.channel.send(embed=self.makeInformationalEmbed(f"Saved {frameCount} frames to {gifDir}"))
+            else:
+                await message.channel.send(embed=self.makeErrorEmbed("No attached GIF"))
+        else:
+            await message.channel.send(embed=self.makeErrorEmbed("No image attached"))
+
 
     async def ocrScanImage(self, message: discord.Message, serverSettings: ServerSettings):
         if len(message.attachments) >= 1:
