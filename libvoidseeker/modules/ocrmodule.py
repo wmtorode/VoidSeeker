@@ -37,6 +37,13 @@ class OCRModule(BaseModule):
             if isGif:
                 frameCount = 1
                 for frame in PIL.ImageSequence.Iterator(img):
+                    impFrame = frame.convert('L')
+                    impFrame.filter(PIL.ImageFilter.MedianFilter())
+                    enhancer = PIL.ImageEnhance.Contrast(impFrame)
+                    impFrame = enhancer.enhance(2)
+                    enhancer = PIL.ImageEnhance.Sharpness(impFrame)
+                    impFrame = enhancer.enhance(2)
+                    impFrame = impFrame.resize((impFrame.width * 2, impFrame.height * 2), PIL.Image.Resampling.LANCZOS)
                     frame.save(f"{gifDir}/frame_{frameCount}.png")
                     frameCount += 1
                 await message.channel.send(embed=self.makeInformationalEmbed(f"Saved {frameCount} frames to {gifDir}"))
