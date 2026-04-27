@@ -54,7 +54,10 @@ class OCRModule(BaseModule):
             if isGif:
                 allText = []
                 for frame in PIL.ImageSequence.Iterator(img):
-                    txt = pytesseract.image_to_string(frame)
+                    grayFrame = frame.convert('L')
+                    txt = pytesseract.image_to_string(grayFrame)
+                    if txt.strip() == '':
+                        continue
                     allText.append(txt)
                 text = '\n'.join(allText)
             else:
