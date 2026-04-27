@@ -9,6 +9,7 @@ from io import BytesIO
 
 import uuid
 import PIL
+from PIL import ImageSequence, ImageFilter, ImageEnhance, Image
 import pytesseract
 
 from libvoidseeker.data.ocrrule import OcrRule
@@ -36,14 +37,14 @@ class OCRModule(BaseModule):
             os.makedirs(gifDir, exist_ok=True)
             if isGif:
                 frameCount = 1
-                for frame in PIL.ImageSequence.Iterator(img):
+                for frame in ImageSequence.Iterator(img):
                     impFrame = frame.convert('L')
-                    impFrame.filter(PIL.ImageFilter.MedianFilter())
-                    enhancer = PIL.ImageEnhance.Contrast(impFrame)
+                    impFrame.filter(ImageFilter.MedianFilter())
+                    enhancer = ImageEnhance.Contrast(impFrame)
                     impFrame = enhancer.enhance(2)
-                    enhancer = PIL.ImageEnhance.Sharpness(impFrame)
+                    enhancer = ImageEnhance.Sharpness(impFrame)
                     impFrame = enhancer.enhance(2)
-                    impFrame = impFrame.resize((impFrame.width * 2, impFrame.height * 2), PIL.Image.Resampling.LANCZOS)
+                    impFrame = impFrame.resize((impFrame.width * 2, impFrame.height * 2), Image.Resampling.LANCZOS)
                     impFrame.save(f"{gifDir}/frame_{frameCount}.png")
                     frameCount += 1
                 await message.channel.send(embed=self.makeInformationalEmbed(f"Saved {frameCount} frames to {gifDir}"))
