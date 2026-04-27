@@ -44,7 +44,7 @@ class OCRModule(BaseModule):
                     enhancer = PIL.ImageEnhance.Sharpness(impFrame)
                     impFrame = enhancer.enhance(2)
                     impFrame = impFrame.resize((impFrame.width * 2, impFrame.height * 2), PIL.Image.Resampling.LANCZOS)
-                    frame.save(f"{gifDir}/frame_{frameCount}.png")
+                    impFrame.save(f"{gifDir}/frame_{frameCount}.png")
                     frameCount += 1
                 await message.channel.send(embed=self.makeInformationalEmbed(f"Saved {frameCount} frames to {gifDir}"))
             else:
