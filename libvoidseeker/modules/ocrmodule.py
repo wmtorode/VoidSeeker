@@ -60,6 +60,7 @@ class OCRModule(BaseModule):
         frameCount = 1
         for frame in os.listdir(self.gifDir):
             if frame.endswith('.png'):
+                frameCount += 1
                 img = Image.open(f"{self.gifDir}/{frame}")
                 txt = pytesseract.image_to_string(img)
                 if txt.strip() == '':
@@ -71,7 +72,7 @@ class OCRModule(BaseModule):
             self.logger.info("OCR failed to find anything")
             await message.channel.send(embed=self.makeWarnEmbed("OCR failed to find anything"))
             return
-        await message.channel.send(text)
+        await self.chunkMsgs(text, message, True)
 
 
 
