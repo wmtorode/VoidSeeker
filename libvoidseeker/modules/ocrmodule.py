@@ -21,11 +21,13 @@ class OCRModule(BaseModule):
 
     ocrScanImageCmd = BaseModule.CmdPrefix + 'ocr'
     ocrGifFrameCmd = BaseModule.CmdPrefix + 'gifFrame'
+    ocrProcessFramesCmd = BaseModule.CmdPrefix + 'ocrFrames'
 
     def registerCommands(self):
         return {
             self.ocrScanImageCmd: Command(self.ocrScanImage, "Scan an Image with OCR and see the results", self.ownerAuth),
-            self.ocrGifFrameCmd: Command(self.saveGifFrames, "Save the frames of a GIF to the bot's store", self.ownerAuth)
+            self.ocrGifFrameCmd: Command(self.saveGifFrames, "Save the frames of a GIF to the bot's store", self.ownerAuth),
+            self.ocrProcessFramesCmd: Command(self.processFrames, "Process the frames of a GIF for OCR", self.ownerAuth)
         }
 
     async def saveGifFrames(self, message: discord.Message, serverSettings: ServerSettings):
@@ -52,6 +54,25 @@ class OCRModule(BaseModule):
                 await message.channel.send(embed=self.makeErrorEmbed("No attached GIF"))
         else:
             await message.channel.send(embed=self.makeErrorEmbed("No image attached"))
+
+    async def processFrames(self, message: discord.Message, serverSettings: ServerSettings):
+        allText = []
+        frameCount = 1
+        for frame in os.listdir(self.gifDir):
+            if frame.endswith('.png'):
+                img = Image.open(f"{self.gifDir}/{frame}")
+                txt = pytesseract.image_to_string(img)
+                if txt.strip() == '':
+                    continue
+                allText.append(txt)
+        text = '\n'.join(allText)
+        await message.channel.send(embed=self.makeInformationalEmbed(f"processed {frameCount} frames, results:"))
+        if text.strip() == '':
+            self.logger.info("OCR failed to find anything")
+            await message.channel.send(embed=self.makeWarnEmbed("OCR failed to find anything"))
+            return
+        await message.channel.send(text)
+
 
 
     async def ocrScanImage(self, message: discord.Message, serverSettings: ServerSettings):
