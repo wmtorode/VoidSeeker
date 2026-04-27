@@ -130,23 +130,23 @@ class BaseModule:
         if serverSettings.serverId not in self.settings.serverSettings:
             self.settings.serverSettings[serverSettings.serverId] = serverSettings
 
-    def makeErrorEmbed(self, msg):
-        embed = discord.Embed(colour=discord.Colour.brand_red())
+    def _makeEmbed(self, msg, colour):
+        embed = discord.Embed(colour=colour)
         embed.description = msg
         embed.set_footer(text="MRBC", icon_url=self.user.display_avatar.url)
         return embed
+
+    def makeErrorEmbed(self, msg):
+        return self._makeEmbed(msg, discord.Colour.brand_red())
+
+    def makeWarnEmbed(self, msg):
+        return self._makeEmbed(msg, discord.Colour.dark_gold())
 
     def makeSuccessEmbed(self, msg):
-        embed = discord.Embed(colour=discord.Colour.brand_green())
-        embed.description = msg
-        embed.set_footer(text="MRBC", icon_url=self.user.display_avatar.url)
-        return embed
+        return self._makeEmbed(msg, discord.Colour.brand_green())
 
     def makeInformationalEmbed(self, msg):
-        embed = discord.Embed(colour=discord.Colour.dark_purple())
-        embed.description = msg
-        embed.set_footer(text="MRBC", icon_url=self.user.display_avatar.url)
-        return embed
+        return self._makeEmbed(msg, discord.Colour.dark_purple())
 
     async def sendFile(self, filename, channel, data=None):
 

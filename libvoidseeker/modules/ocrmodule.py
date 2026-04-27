@@ -28,8 +28,21 @@ class OCRModule(BaseModule):
 
     async def ocrScanImage(self, message: discord.Message, serverSettings: ServerSettings):
         if len(message.attachments) >= 1:
+            isGif = self._isGif(message.attachments[0])
             bio = BytesIO(await message.attachments[0].read())
-            text = pytesseract.image_to_string(PIL.Image.open(bio))
+            img = PIL.Image.open(bio)
+            if isGif:
+                allText = []
+                for frame in PIL.ImageSequence.Iterator(img):
+                    txt = pytesseract.image_to_string(frame)
+                    allText.append(txt)
+                text = '\n'.join(allText)
+            else:
+                text = pytesseract.image_to_string(PIL.Image.open(bio))
+            if text.strip() == '':
+                self.logger.info("OCR failed to find anything")
+                await message.channel.send(embed=self.makeWarnEmbed("OCR failed to find anything"))
+                return
             self.logger.info(text)
             await message.channel.send(text)
         else:
@@ -108,3 +121,8 @@ class OCRModule(BaseModule):
         if attachment.content_type is None:
             return False
         return attachment.content_type.startswith("image/")
+
+    def _isGif(self, attachment: discord.Attachment):
+        if attachment.content_type is None:
+            return False
+        return attachment.content_type.startswith("image/gif")
