@@ -74,7 +74,6 @@ class VoidSeeker(discord.Client):
     def __init__(self, logger):
         intents = discord.Intents.default()
         intents.members = True
-        intents.presences = True
         intents.message_content = True
         discord.Client.__init__(self, intents=intents)
         self.ownerIds = OWNERS
