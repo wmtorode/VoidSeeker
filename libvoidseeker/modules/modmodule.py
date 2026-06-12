@@ -1,3 +1,5 @@
+import traceback
+
 import discord
 
 from .. import OCRData, OcrResult
@@ -90,3 +92,31 @@ class ModModule(BaseModule):
         embed.set_footer(text=f"{self.user.display_name} Detailed Ban Report", icon_url=self.user.display_avatar.url)
 
         await message.channel.send(embed=embed)
+
+    async def welcomeCheck(self, member: discord.Member, serverSettings: ServerSettings):
+        if not serverSettings.welcomeCheckEnabled:
+            return
+
+        previousBans = self.Session.query(BanAction).filter(BanAction.serverId == serverSettings.serverId, member.id == BanAction.userId).all()
+        banCount = len(previousBans)
+
+        try:
+            channel = self.voidseeker.get_channel(serverSettings.welcomeCheckChannelId)
+            if channel:
+                embed = discord.Embed(colour=discord.Colour.blurple(),
+                                      title=f"{member.display_name} has joined")
+                embed.set_author(name=member.display_name, icon_url=member.display_avatar.url)
+                embed.add_field(name='Created On',
+                                value=f'{member.created_at.strftime('%b %d, %Y - %H:%M:%S, %Z')}', inline=False)
+                embed.add_field(name=f'Joined On',
+                                value=f'{member.joined_at.strftime('%b %d, %Y - %H:%M:%S, %Z')}',
+                                inline=False)
+                embed.add_field(name="Previous Bans", value=str(banCount))
+                embed.set_footer(text=self.user.display_name, icon_url=self.user.display_avatar.url)
+                await channel.send(embed=embed)
+        except:
+            trace = traceback.format_exc()
+            lst_trace = trace.split('\n')
+            for line in lst_trace:
+                self.logger.critical(line)
+

@@ -180,6 +180,9 @@ class VoidSeeker(discord.Client):
             await self.wait_until_ready()
             self.ocrReady = True
 
+    async def on_member_join(self, member: discord.Member):
+        await self.modModule.welcomeCheck(member, self.baseModule.getSettings(member.guild.id))
+
     async def on_message(self, message:discord.Message):
         if not self.initComplete:
             self.logger.info("Bot not yet ready to handle messages")

@@ -130,6 +130,11 @@ class AdminModule(BaseModule):
         baseSettings.ocrEnabled = serverSettings.ocrEnabled
         baseSettings.ocrImageCount = serverSettings.ocrImagesBeforeProcessing
         baseSettings.ocrRules = serverSettings.ocrJson
+        baseSettings.welcomeCheckEnabled = serverSettings.welcomeCheckEnabled
+        if serverSettings.welcomeCheckEnabled:
+            baseSettings.welcomeCheckChannelId = serverSettings.welcomeCheckChannelId
+        else:
+            baseSettings.welcomeCheckChannelId = None
 
         self.Session.add(baseSettings)
 

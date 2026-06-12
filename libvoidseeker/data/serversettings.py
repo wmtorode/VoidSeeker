@@ -33,6 +33,9 @@ class ServerSettings:
         self.ocrImagesBeforeProcessing = 2
         self.ocrRules = []
 
+        self.welcomeCheckEnabled = False
+        self.welcomeCheckChannelId = 0
+
     def initSettings(self, serverSettingDb: ServerSetting, honeyPotChannel: HoneyPotChannel, authUsers: list, antiSpamImmuneRoles: list, banTerms: list, roles: list):
         self.honeyPotChannelEnabled = serverSettingDb.honeyPotEnabled
         self.honeyPotChannelText = serverSettingDb.honeyPotText
@@ -40,6 +43,10 @@ class ServerSettings:
         self.banOnPingAll = serverSettingDb.banOnPingAll
         self.heuristicsBanMessage = serverSettingDb.heuristicsBanText
         self.banCount = serverSettingDb.banCount
+
+        if serverSettingDb.welcomeCheckEnabled is not None:
+            self.welcomeCheckEnabled = serverSettingDb.welcomeCheckEnabled
+            self.welcomeCheckChannelId = serverSettingDb.welcomeCheckChannelId
 
         self.honeyPotChannelId = 0
         self.serverAdmins.clear()

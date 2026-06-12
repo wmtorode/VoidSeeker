@@ -22,4 +22,6 @@ class ServerSetting(ModelBase):
     ocrRules = Column(NestedMutableJson, default={})
     ocrEnabled = Column(Boolean, default=False)
     ocrImageCount = Column(BigInteger, default=0)
+    welcomeCheckEnabled = Column(Boolean, default=False)
+    welcomeCheckChannelId = Column(BigInteger, default=0)
 
