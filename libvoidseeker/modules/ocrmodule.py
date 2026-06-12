@@ -4,6 +4,7 @@ import discord
 import time
 import os
 import shutil
+import traceback
 
 from io import BytesIO
 
@@ -136,36 +137,49 @@ class OCRModule(BaseModule):
 
 
     async def _processResult(self, ocrResult: OcrResult):
-        serverSettings = self.getSettings(ocrResult.serverId)
-        guild = self.voidseeker.get_guild(ocrResult.serverId)
-        user = guild.get_member(ocrResult.userId)
-        channel = guild.get_channel(ocrResult.channelId)
-        triggeredRules = []
-        resultData = OCRData()
-        resultData.fromJson(ocrResult.ocrResultJson)
-        for result in resultData.results:
-            for rule in serverSettings.ocrRules: # type: OcrRule
-                if rule.check(result):
-                    triggeredRules.append(rule.ruleName)
-                    self.logger.info(f"OCR Rule triggered: {rule.ruleName}")
-        if len(triggeredRules) > 0:
-            self.logger.info("OCR Rules triggered, OCR ban in progress")
+        try:
+            serverSettings = self.getSettings(ocrResult.serverId)
+            guild = self.voidseeker.get_guild(ocrResult.serverId)
+            user = guild.get_member(ocrResult.userId)
+            channel = guild.get_channel(ocrResult.channelId)
+            triggeredRules = []
+            resultData = OCRData()
+            resultData.fromJson(ocrResult.ocrResultJson)
+            for result in resultData.results:
+                for rule in serverSettings.ocrRules: # type: OcrRule
+                    if rule.check(result):
+                        triggeredRules.append(rule.ruleName)
+                        self.logger.info(f"OCR Rule triggered: {rule.ruleName}")
+            if len(triggeredRules) > 0:
+                self.logger.info("OCR Rules triggered, OCR ban in progress")
+                ocrResult.historic = True
+                ocrResult.rulesBreached = ';'.join(triggeredRules)
+                self.startSqlEntry()
+                self.Session.add(ocrResult)
+                self.Session.commit()
+                await self.banUser(serverSettings, user, guild, channel, DetectionType.Ocr, ocrResult.id)
+            else:
+                # dont keep detections that had nothing
+                for image in resultData.images:
+                    try:
+                        os.remove(f"{self.storeDir}/ocr/{image}")
+                    except:
+                        self.logger.warning(f"failed to remove OCR Image: {image}")
+                self.startSqlEntry()
+                self.Session.delete(ocrResult)
+                self.Session.commit()
+        except:
+            self.logger.error("OCR Processing Exception:")
+            trace = traceback.format_exc()
+            lst_trace = trace.split('\n')
+            for line in lst_trace:
+                self.logger.error(line)
             ocrResult.historic = True
-            ocrResult.rulesBreached = ';'.join(triggeredRules)
+            ocrResult.rulesBreached = "Failed to process OCR, see logs"
             self.startSqlEntry()
             self.Session.add(ocrResult)
             self.Session.commit()
-            await self.banUser(serverSettings, user, guild, channel, DetectionType.Ocr, ocrResult.id)
-        else:
-            # dont keep detections that had nothing
-            for image in resultData.images:
-                try:
-                    os.remove(f"{self.storeDir}/ocr/{image}")
-                except:
-                    self.logger.warning(f"failed to remove OCR Image: {image}")
-            self.startSqlEntry()
-            self.Session.delete(ocrResult)
-            self.Session.commit()
+
 
 
 
