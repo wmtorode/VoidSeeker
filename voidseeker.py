@@ -136,6 +136,8 @@ class VoidSeeker(discord.Client):
         self.logger.info(msg)
         if not self.initComplete:
             self.initModulesAndCommands()
+            for guild in self.guilds:
+                self.logger.info(f"App is part of guild: {guild.name} ({guild.id})")
             await self.spamModule.initHoneyPots()
 
     async def on_member_remove(self, member: discord.Member):

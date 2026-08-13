@@ -2,13 +2,21 @@ import discord
 import datetime
 import traceback
 
-from ..data import ServerSettings, DetectionType
+from ..data import ServerSettings, DetectionType, Command
 from ..model import ServerSetting, BanAction, HoneyPotChannel
+from ..ui import HoneypotView
 
 from .basemodule import BaseModule
 
 
 class SpamModule(BaseModule):
+
+    refreshMessageCmd = BaseModule.CmdPrefix + "refreshMsg"
+
+    def registerCommands(self):
+        return {
+            self.refreshMessageCmd: Command(self.refreshHoneyPotMessage, "Refresh honey pot message", self.adminAuth)
+        }
 
 
     async def checkIfSpambot(self, message: discord.Message):
@@ -132,7 +140,7 @@ class SpamModule(BaseModule):
             channel = guild.get_channel(hpChannel.channelId)
             try:
                 message = await channel.fetch_message(hpChannel.messageId)
-                await message.edit(content=serverSettings.honeyPotChannelText.format(serverSettings.banCount))
+                await message.edit(content=None, view=HoneypotView(serverSettings, self.voidseeker.user.avatar.url))
             except:
                 self.logger.critical("HoneyPot Message update failure!")
                 trace = traceback.format_exc()
@@ -167,3 +175,15 @@ class SpamModule(BaseModule):
         for setting in self.settings.serverSettings.values():
             await self.initHoneyPotChannel(setting)
         self.Session.commit()
+
+    async def refreshHoneyPotMessage(self, message: discord.Message, serverSettings: ServerSettings):
+        if serverSettings.honeyPotChannelEnabled:
+            hpChannel = self.Session.query(HoneyPotChannel).filter(
+                HoneyPotChannel.serverId == serverSettings.serverId).first()
+            if hpChannel:
+                await self._updateHoneyPotMessage(message.guild, serverSettings, hpChannel)
+                await message.channel.send(embed=self.makeSuccessEmbed("honey pot message refreshed"))
+            else:
+                await message.channel.send(embed=self.makeErrorEmbed("honey pot channel not found"))
+        else:
+            await message.channel.send(embed=self.makeErrorEmbed("honey pot channel disabled"))
