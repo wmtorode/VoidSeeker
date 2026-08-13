@@ -132,7 +132,7 @@ class SpamModule(BaseModule):
 
     async def _makeHoneyPotMessage(self, guild: discord.Guild, serverSettings: ServerSettings, hpChannel: HoneyPotChannel):
         channel = guild.get_channel(hpChannel.channelId)
-        message = await channel.send(serverSettings.honeyPotChannelText.format(serverSettings.banCount))
+        message = await channel.send(view=HoneypotView(serverSettings, self.voidseeker.user.avatar.url))
         hpChannel.messageId = message.id
 
     async def _updateHoneyPotMessage(self, guild: discord.Guild, serverSettings: ServerSettings, hpChannel: HoneyPotChannel):
